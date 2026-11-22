@@ -1,0 +1,3424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>聖夜のきまぐれ猫ブロック崩し</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS for P2P Online Multiplayer -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <!-- Rounded Storybook Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --forest-dark: #132e21;
+      --forest-mid: #1d4733;
+      --xmas-red: #c93434;
+      --xmas-red-light: #e34c4c;
+      --champagne: #e8c468;
+      --champagne-light: #faecc3;
+      --cream: #fdf7ea;
+      --cream-warm: #f5ead4;
+      --wood: #6e452b;
+      --ink: #3d2b24;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: 'M PLUS Rounded 1c', 'Fredoka', sans-serif;
+      background: radial-gradient(circle at 50% 0%, #24573e 0%, #163828 55%, #0e2419 100%);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    /* Background Snow Canvas */
+    #bgSnowCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Storybook Card Surface */
+    .storybook-card {
+      background: linear-gradient(180deg, #fffdf7 0%, #f7ecd6 100%);
+      border: 3px solid #d4af5e;
+      box-shadow:
+        0 14px 35px rgba(0, 0, 0, 0.35),
+        inset 0 2px 0 rgba(255, 255, 255, 0.9);
+      border-radius: 24px;
+    }
+
+    /* Bubbly Festive Buttons */
+    .btn-festive {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      font-weight: 800;
+      border-radius: 9999px;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, filter 0.14s ease;
+      cursor: pointer;
+      border: 2.5px solid rgba(255, 255, 255, 0.55);
+    }
+    .btn-festive:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.04);
+    }
+    .btn-festive:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    .btn-red {
+      background: linear-gradient(180deg, #e55252 0%, #c12b2b 100%);
+      color: #fff;
+      box-shadow: 0 5px 0 #8a1d1d, 0 8px 18px rgba(138, 29, 29, 0.35);
+    }
+    .btn-red:active {
+      box-shadow: 0 2px 0 #8a1d1d, 0 4px 10px rgba(138, 29, 29, 0.35);
+    }
+
+    .btn-green {
+      background: linear-gradient(180deg, #32945a 0%, #1e6b3e 100%);
+      color: #fff;
+      box-shadow: 0 5px 0 #134728, 0 8px 18px rgba(19, 71, 40, 0.35);
+    }
+    .btn-green:active {
+      box-shadow: 0 2px 0 #134728, 0 4px 10px rgba(19, 71, 40, 0.35);
+    }
+
+    .btn-gold {
+      background: linear-gradient(180deg, #f6d984 0%, #d9a73b 100%);
+      color: #4a3011;
+      box-shadow: 0 4px 0 #9c721f, 0 6px 14px rgba(156, 114, 31, 0.3);
+    }
+    .btn-gold:active {
+      box-shadow: 0 2px 0 #9c721f;
+    }
+
+    .btn-cream {
+      background: linear-gradient(180deg, #fffdf9 0%, #efe2c8 100%);
+      color: var(--ink);
+      border-color: #d7be8e;
+      box-shadow: 0 4px 0 #b89d6d;
+    }
+    .btn-cream:active {
+      box-shadow: 0 2px 0 #b89d6d;
+    }
+
+    /* Mode Toggle Pills */
+    .mode-pill {
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .mode-pill.active {
+      background: linear-gradient(180deg, #e04f4f 0%, #bf2d2d 100%);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(191, 45, 45, 0.35);
+      border-color: #f8b4b4;
+    }
+
+    /* Cat Select Card */
+    .cat-card {
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      cursor: pointer;
+      background: #fffcf5;
+      border: 2.5px solid #e4d4b7;
+      border-radius: 16px;
+    }
+    .cat-card:hover {
+      transform: translateY(-3px);
+      border-color: #d6a94f;
+    }
+    .cat-card.selected-p1 {
+      border-color: #d63636;
+      background: #fff4f4;
+      box-shadow: 0 0 0 3px rgba(214, 54, 54, 0.22), 0 6px 14px rgba(214, 54, 54, 0.18);
+    }
+    .cat-card.selected-p2 {
+      border-color: #237a47;
+      background: #f2fbf5;
+      box-shadow: 0 0 0 3px rgba(35, 122, 71, 0.22), 0 6px 14px rgba(35, 122, 71, 0.18);
+    }
+
+    /* Game Stage Frame */
+    .stage-frame {
+      position: relative;
+      background: linear-gradient(180deg, #7d4f32 0%, #5e3922 100%);
+      border: 4px solid #e8c468;
+      border-radius: 22px;
+      padding: 10px;
+      box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.45),
+        inset 0 2px 6px rgba(255, 240, 200, 0.25);
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1000 / 600;
+      border-radius: 14px;
+      background: #f7eedb;
+      touch-action: none;
+    }
+
+    /* Twinkling Light String */
+    .light-bulb {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      animation: twinkle 1.8s infinite ease-in-out alternate;
+    }
+    @keyframes twinkle {
+      0% { opacity: 0.45; transform: scale(0.9); filter: brightness(0.85); }
+      100% { opacity: 1; transform: scale(1.12); filter: brightness(1.25); }
+    }
+
+    /* Ticker pop animation */
+    @keyframes popIn {
+      0% { opacity: 0; transform: translateY(4px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .ticker-pop {
+      animation: popIn 0.25s ease-out;
+    }
+
+    /* Custom Scrollbar for small screens */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(232, 196, 104, 0.55); border-radius: 999px; }
+  </style>
+</head>
+<body class="relative flex flex-col items-center justify-center min-h-screen p-2 sm:p-4">
+
+  <!-- Gentle Snowfall Background -->
+  <canvas id="bgSnowCanvas"></canvas>
+
+  <!-- BGM Audio Element (bgm.mp3 with bgm.wav fallback) -->
+  <audio id="bgmAudio" loop preload="auto">
+    <source src="bgm.mp3" type="audio/mpeg" />
+    <source src="bgm.wav" type="audio/wav" />
+  </audio>
+
+  <!-- Floating BGM Toggle Button (Accessible on Title, Gameplay, and Result screens) -->
+  <button
+    id="bgmToggleBtn"
+    type="button"
+    class="fixed top-2.5 right-2.5 sm:top-4 sm:right-4 z-50 btn-festive btn-gold px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm shadow-lg"
+    title="BGMのON/OFFを切り替え"
+    aria-pressed="true"
+  >
+    🎵 BGM: ON
+  </button>
+
+  <!-- Main App Wrapper -->
+  <div class="relative z-10 w-full max-w-5xl mx-auto flex flex-col items-center">
+
+    <!-- ===================== TITLE / CHARACTER SELECT SCREEN ===================== -->
+    <section id="titleScreen" class="w-full storybook-card p-4 sm:p-6 md:p-7 relative overflow-hidden">
+      <!-- Top Decorative Fairy Lights -->
+      <div class="flex justify-around items-center mb-3 px-2 opacity-95" aria-hidden="true">
+        <span class="light-bulb bg-red-500 shadow-[0_0_10px_#ef4444]" style="animation-delay:0s"></span>
+        <span class="light-bulb bg-amber-300 shadow-[0_0_10px_#fcd34d]" style="animation-delay:0.3s"></span>
+        <span class="light-bulb bg-emerald-400 shadow-[0_0_10px_#34d399]" style="animation-delay:0.6s"></span>
+        <span class="light-bulb bg-red-500 shadow-[0_0_10px_#ef4444]" style="animation-delay:0.9s"></span>
+        <span class="light-bulb bg-amber-300 shadow-[0_0_10px_#fcd34d]" style="animation-delay:1.2s"></span>
+        <span class="light-bulb bg-emerald-400 shadow-[0_0_10px_#34d399]" style="animation-delay:0.2s"></span>
+        <span class="light-bulb bg-red-500 shadow-[0_0_10px_#ef4444]" style="animation-delay:0.5s"></span>
+        <span class="light-bulb bg-amber-300 shadow-[0_0_10px_#fcd34d]" style="animation-delay:0.8s"></span>
+        <span class="light-bulb bg-emerald-400 shadow-[0_0_10px_#34d399]" style="animation-delay:1.1s"></span>
+      </div>
+
+      <!-- Title Header -->
+      <div class="text-center mb-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 text-xs sm:text-sm font-bold mb-1.5">
+          <span>🎄</span>
+          <span>クリスマス特別ミニゲーム・2人対戦ブロック崩し</span>
+          <span>🐾</span>
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-[#3d2b24] drop-shadow-sm">
+          聖夜のきまぐれ猫ブロック崩し
+        </h1>
+        <p class="text-xs sm:text-sm text-[#6b5446] mt-1 font-medium">
+          気まぐれな猫たちと一緒に、ツリーやプレゼントのブロックを崩してスコアを競おう！
+        </p>
+      </div>
+
+      <!-- Mode Switcher -->
+      <div class="flex justify-center mb-4">
+        <div class="inline-flex flex-wrap justify-center p-1.5 rounded-full bg-[#efe2c6] border-2 border-[#d8be8a] gap-1.5">
+          <button id="mode2pBtn" class="mode-pill active px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold border border-transparent">
+            👥 2人対戦 (同じ画面)
+          </button>
+          <button id="modeCpuBtn" class="mode-pill px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold text-[#5c4538] border border-transparent">
+            🤖 1人プレイ (vs CPU)
+          </button>
+          <button id="modeOnlineBtn" class="mode-pill px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold text-[#5c4538] border border-transparent">
+            🌐 オンライン対戦
+          </button>
+        </div>
+      </div>
+
+      <!-- Online Multiplayer Lobby Panel (PeerJS) -->
+      <div id="onlineLobbyPanel" class="hidden rounded-2xl bg-[#f0f7ff] border-2 border-[#9ec5f0] p-3.5 sm:p-4 mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div class="text-xs sm:text-sm font-extrabold text-[#1e4d7b] flex items-center gap-1.5">
+            <span>🌐</span>
+            <span>オンライン対戦ロビー（合言葉でつながるよ！）</span>
+          </div>
+          <span id="onlineStatusBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-[#b9d6f5] text-[11px] sm:text-xs font-extrabold text-[#3b6691]">
+            未接続
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Host: Create Room -->
+          <div class="bg-white/90 rounded-xl p-3 border border-[#c8dff7] flex flex-col justify-between gap-2">
+            <div class="text-xs font-extrabold text-[#c93434]">🎅 部屋をつくる（あなたは 1P・左）</div>
+            <div id="hostCodeArea" class="hidden flex items-center justify-between gap-2 bg-[#fff6e5] border-2 border-[#e8c468] rounded-xl px-3 py-2">
+              <div>
+                <div class="text-[10px] font-bold text-[#8a6523]">4桁の合言葉</div>
+                <div id="hostRoomCode" class="text-2xl font-extrabold tracking-[0.2em] text-[#3d2b24] font-['Fredoka']">----</div>
+              </div>
+              <button id="copyRoomCodeBtn" type="button" class="btn-festive btn-gold px-3 py-1.5 text-xs">
+                📋 コピー
+              </button>
+            </div>
+            <button id="createRoomBtn" type="button" class="btn-festive btn-red py-2 text-xs sm:text-sm w-full">
+              ✨ 部屋をつくる
+            </button>
+          </div>
+
+          <!-- Guest: Join Room -->
+          <div class="bg-white/90 rounded-xl p-3 border border-[#c8dff7] flex flex-col justify-between gap-2">
+            <div class="text-xs font-extrabold text-[#237a47]">🎄 部屋に入る（あなたは 2P・右）</div>
+            <div class="flex items-center gap-2">
+              <input
+                id="joinRoomInput"
+                type="text"
+                inputmode="numeric"
+                maxlength="4"
+                placeholder="4桁の合言葉"
+                class="w-full px-3 py-2 rounded-xl border-2 border-[#b9d6f5] bg-[#f8fbff] text-center text-base font-extrabold tracking-[0.2em] text-[#3d2b24] font-['Fredoka'] focus:outline-none focus:border-[#237a47]"
+              />
+              <button id="joinRoomBtn" type="button" class="btn-festive btn-green px-4 py-2 text-xs sm:text-sm shrink-0">
+                参加する
+              </button>
+            </div>
+            <div class="text-[11px] text-[#5b728a] font-medium">
+              相手から教えてもらった4桁の数字を入れてね
+            </div>
+          </div>
+        </div>
+
+        <p id="onlineStatusMessage" class="mt-2.5 text-xs font-bold text-[#2b547e] text-center">
+          「部屋をつくる」または「部屋に入る」を選んで接続してね！
+        </p>
+      </div>
+
+      <!-- Character Selection Grid (1P & 2P) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- 1P Selector -->
+        <div class="rounded-2xl bg-[#fff6f4] border-2 border-[#ebb4b4] p-3 sm:p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d63636] text-white text-xs sm:text-sm font-extrabold shadow-sm">
+              🎅 1P（左・赤）
+            </span>
+            <span class="text-xs font-bold text-[#8c3d3d]">操作：W / S または 左タッチ</span>
+          </div>
+          <div id="p1CatGrid" class="grid grid-cols-4 gap-2"></div>
+        </div>
+
+        <!-- 2P Selector -->
+        <div class="rounded-2xl bg-[#f3fbf6] border-2 border-[#a8d8ba] p-3 sm:p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <span id="p2BadgeLabel" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#237a47] text-white text-xs sm:text-sm font-extrabold shadow-sm">
+              🎄 2P（右・緑）
+            </span>
+            <span id="p2ControlHint" class="text-xs font-bold text-[#25633e]">操作：↑ / ↓ または 右タッチ</span>
+          </div>
+          <div id="p2CatGrid" class="grid grid-cols-4 gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Compact Whimsical Cat Rules Guide -->
+      <div class="rounded-2xl bg-[#fdf5e2] border-2 border-[#e4cf9f] p-3 sm:p-4 mb-5">
+        <div class="text-xs sm:text-sm font-extrabold text-[#5b3d24] mb-2 flex items-center gap-1.5">
+          <span>✨</span>
+          <span>きまぐれ猫たちの3つの行動（中盤には他の猫も遊びに来るよ！）</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+          <div class="flex items-start gap-2 bg-white/80 rounded-xl p-2.5 border border-[#eadab7]">
+            <span class="text-xl leading-none mt-0.5">🐾</span>
+            <div>
+              <div class="font-extrabold text-[#3d2b24]">トコトコ追いかけ</div>
+              <p class="text-[#6b5446] leading-snug mt-0.5">ボールを追いかけるけど原則さわらない（すり抜けるよ）</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 bg-white/80 rounded-xl p-2.5 border border-[#eadab7]">
+            <span class="text-xl leading-none mt-0.5">💤</span>
+            <div>
+              <div class="font-extrabold text-[#b56718]">気まぐれお昼寝</div>
+              <p class="text-[#6b5446] leading-snug mt-0.5">途中で寝ちゃうと<strong>消えない障害物</strong>に！ボールがポヨンと跳ね返るよ</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-2 bg-white/80 rounded-xl p-2.5 border border-[#eadab7]">
+            <span class="text-xl leading-none mt-0.5">⚡</span>
+            <div>
+              <div class="font-extrabold text-[#c93434]">ごくまれに猫パンチ！</div>
+              <p class="text-[#6b5446] leading-snug mt-0.5">追いつくと「にゃっ！」とボールをはたいて軌道を大きく変えちゃう！</p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-2.5 pt-2 border-t border-[#ebdcb9] flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] sm:text-xs font-bold text-[#6e523a]">
+          <span>🎁 通常ブロック：+100pt</span>
+          <span>⭐ 星・特別ギフト：+300pt</span>
+          <span>🥅 相手ゴールへ打ち込み：+150pt</span>
+          <span>⏱ 制限時間90秒（または全破壊）で勝負！</span>
+        </div>
+      </div>
+
+      <!-- Start Button -->
+      <div class="flex flex-col items-center gap-1.5">
+        <button id="startGameBtn" class="btn-festive btn-red px-9 sm:px-12 py-3.5 text-base sm:text-xl tracking-wide">
+          <span>🎄</span>
+          <span id="startGameBtnLabel">ゲームスタート！</span>
+          <span>🐾</span>
+        </button>
+        <p id="startHintText" class="hidden text-xs font-bold text-[#6b5446]"></p>
+      </div>
+    </section>
+
+    <!-- ===================== GAMEPLAY SCREEN ===================== -->
+    <section id="gameScreen" class="hidden w-full flex flex-col items-center gap-2.5">
+
+      <!-- Online Role Banner -->
+      <div id="onlineRoleBanner" class="hidden w-full flex items-center justify-center">
+        <div id="onlineRoleBadge" class="px-4 py-1 rounded-full bg-[#1e4d7b] text-white border-2 border-[#9ec5f0] shadow-md text-xs sm:text-sm font-extrabold flex items-center gap-2">
+          <span>🌐</span>
+          <span id="onlineRoleText">オンライン対戦中：あなたは 1P（左）</span>
+        </div>
+      </div>
+
+      <!-- Top HUD Bar -->
+      <div class="w-full storybook-card px-3 py-2 sm:px-5 sm:py-2.5 flex flex-wrap items-center justify-between gap-2">
+        <!-- 1P Score -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <canvas id="hudP1Cat" width="44" height="44" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#ffeaea] border-2 border-[#d63636]"></canvas>
+          <div>
+            <div class="text-[11px] sm:text-xs font-extrabold text-[#c93434] flex items-center gap-1">
+              <span>🎅 1P</span>
+              <span id="hudP1Name" class="text-[#6b5446]">くろねこ</span>
+            </div>
+            <div id="p1ScoreDisplay" class="text-xl sm:text-2xl font-extrabold text-[#3d2b24] leading-none font-['Fredoka']">0</div>
+          </div>
+        </div>
+
+        <!-- Center Timer & Blocks -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#1a432f] text-[#faecc3] border-2 border-[#e8c468] shadow-inner">
+            <span class="text-xs sm:text-sm">⏱</span>
+            <span id="timerDisplay" class="text-lg sm:text-2xl font-extrabold font-['Fredoka'] tracking-wider">1:30</span>
+          </div>
+          <div class="text-[10px] sm:text-xs font-bold text-[#6e523a] mt-0.5">
+            のこりブロック：<span id="blocksLeftDisplay" class="text-[#c93434] font-extrabold">0</span>
+          </div>
+        </div>
+
+        <!-- 2P Score -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-row-reverse text-right">
+          <canvas id="hudP2Cat" width="44" height="44" class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#e8faef] border-2 border-[#237a47]"></canvas>
+          <div>
+            <div class="text-[11px] sm:text-xs font-extrabold text-[#237a47] flex items-center justify-end gap-1">
+              <span id="hudP2Name" class="text-[#6b5446]">しろねこ</span>
+              <span id="hudP2Label">2P 🎄</span>
+            </div>
+            <div id="p2ScoreDisplay" class="text-xl sm:text-2xl font-extrabold text-[#3d2b24] leading-none font-['Fredoka']">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cat Whimsical Ticker -->
+      <div class="w-full flex justify-center">
+        <div id="catTicker" class="px-4 py-1.5 rounded-full bg-[#fffaf0]/95 border-2 border-[#e2c275] shadow-md text-xs sm:text-sm font-bold text-[#4d3527] flex items-center gap-2 max-w-full truncate">
+          <span>🐾</span>
+          <span id="catTickerText">きまぐれな猫たちがコートに集まったよ！</span>
+        </div>
+      </div>
+
+      <!-- Main Game Canvas Stage -->
+      <div class="w-full stage-frame">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- Pause Overlay -->
+        <div id="pauseOverlay" class="hidden absolute inset-2.5 rounded-[14px] bg-[#132e21]/75 backdrop-blur-sm flex flex-col items-center justify-center z-20 p-4 text-center">
+          <div class="storybook-card p-6 max-w-xs w-full">
+            <div class="text-3xl mb-1">☕🐾</div>
+            <h2 class="text-xl font-extrabold text-[#3d2b24] mb-1">ちょっとひとやすみ</h2>
+            <p class="text-xs text-[#6b5446] mb-4">猫たちもココアを飲んで待っています</p>
+            <div class="flex flex-col gap-2.5">
+              <button id="resumeBtn" class="btn-festive btn-green py-2.5 text-sm w-full">▶ ゲームを再開する</button>
+              <button id="pauseRestartBtn" class="btn-festive btn-gold py-2.5 text-sm w-full">🔄 最初からやり直す</button>
+              <button id="pauseTitleBtn" class="btn-festive btn-cream py-2.5 text-sm w-full">🏠 キャラ選択にもどる</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Overlay -->
+        <div id="resultOverlay" class="hidden absolute inset-2.5 rounded-[14px] bg-[#10261b]/80 backdrop-blur-sm flex items-center justify-center z-30 p-3 overflow-y-auto">
+          <div class="storybook-card p-4 sm:p-6 max-w-lg w-full text-center relative">
+            <div class="text-xs sm:text-sm font-extrabold text-[#b8821d] tracking-wider mb-1">✨ MERRY CHRISTMAS ✨</div>
+            <h2 id="winnerTitle" class="text-2xl sm:text-3xl font-extrabold text-[#c93434] mb-3">🎅 1P の勝利！</h2>
+
+            <!-- Score Comparison -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div id="resP1Box" class="rounded-2xl bg-[#fff4f4] border-2 border-[#e39e9e] p-2.5">
+                <div class="text-xs font-extrabold text-[#c93434]">🎅 1P (<span id="resP1CatName">くろねこ</span>)</div>
+                <div id="resP1Score" class="text-2xl sm:text-3xl font-extrabold text-[#3d2b24] font-['Fredoka']">0</div>
+                <div class="text-[11px] font-bold text-[#7d5858]">pt</div>
+              </div>
+              <div id="resP2Box" class="rounded-2xl bg-[#f1fbf4] border-2 border-[#95cfa9] p-2.5">
+                <div class="text-xs font-extrabold text-[#237a47]"><span id="resP2Role">🎄 2P</span> (<span id="resP2CatName">しろねこ</span>)</div>
+                <div id="resP2Score" class="text-2xl sm:text-3xl font-extrabold text-[#3d2b24] font-['Fredoka']">0</div>
+                <div class="text-[11px] font-bold text-[#4a7059]">pt</div>
+              </div>
+            </div>
+
+            <!-- MVP Cat Award -->
+            <div class="rounded-2xl bg-[#fdf4df] border-2 border-[#e3c276] p-3 mb-4 flex items-center justify-center gap-3 text-left">
+              <canvas id="mvpCatCanvas" width="76" height="76" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white border-2 border-[#e3c276] shrink-0"></canvas>
+              <div>
+                <div class="inline-block px-2 py-0.5 rounded-full bg-[#e8c468] text-[#4a3011] text-[10px] sm:text-xs font-extrabold mb-1">
+                  🏆 本日のきまぐれ猫MVP
+                </div>
+                <div id="mvpCatTitle" class="text-sm sm:text-base font-extrabold text-[#3d2b24]">きじとら</div>
+                <div id="mvpCatStats" class="text-xs text-[#6b5446] font-medium mt-0.5">お昼寝ブロック 0回 / 猫パンチ 0回！</div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap justify-center gap-3">
+              <button id="playAgainBtn" class="btn-festive btn-red px-6 py-2.5 text-sm sm:text-base">
+                🎄 もう一回遊ぶ
+              </button>
+              <button id="backToTitleBtn" class="btn-festive btn-cream px-5 py-2.5 text-sm sm:text-base">
+                🐾 キャラ選択へ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disconnect / Network Error Overlay -->
+        <div id="disconnectOverlay" class="hidden absolute inset-2.5 rounded-[14px] bg-[#132e21]/82 backdrop-blur-sm flex items-center justify-center z-40 p-4 text-center">
+          <div class="storybook-card p-6 max-w-sm w-full">
+            <div class="text-3xl mb-1">📡🐾</div>
+            <h2 class="text-lg sm:text-xl font-extrabold text-[#c93434] mb-1.5">通信が切れちゃったみたい…</h2>
+            <p id="disconnectMsg" class="text-xs sm:text-sm text-[#6b5446] font-medium mb-4">相手との接続が切断されました。</p>
+            <button id="disconnectBackBtn" class="btn-festive btn-red px-6 py-2.5 text-sm w-full">
+              🏠 タイトルへもどる
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Control Bar (Outside Canvas) -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-2 px-1">
+        <div id="bottomControlsHint" class="text-[11px] sm:text-xs font-bold text-[#faecc3]/95 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span id="bottomP1Hint">🎅 1P：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">W</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">S</kbd> or 左画面ドラッグ</span>
+          <span id="bottomP2Hint">🎄 2P：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↑</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↓</kbd> or 右画面ドラッグ</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="soundToggleBtn" class="btn-festive btn-cream px-3.5 py-1.5 text-xs sm:text-sm" title="サウンドON/OFF">
+            🔊 音ON
+          </button>
+          <button id="pauseBtn" class="btn-festive btn-gold px-3.5 py-1.5 text-xs sm:text-sm">
+            ⏸ 一時停止
+          </button>
+          <button id="restartBtn" class="btn-festive btn-cream px-3.5 py-1.5 text-xs sm:text-sm">
+            🔄 リスタート
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <script>
+    /*************************************************************************
+     * 1. CAT DEFINITIONS (Faithful to 猫化設定.jpg)
+     *************************************************************************/
+    const CAT_TYPES = {
+      kuro: {
+        id: 'kuro',
+        name: 'くろねこ',
+        subtitle: '優雅な黒猫',
+        breed: 'ボンベイ系',
+        scale: 0.96,
+        collarDesc: '赤リボン＋王冠',
+        badgeColor: '#c93434'
+      },
+      kijitora: {
+        id: 'kijitora',
+        name: 'きじとら',
+        subtitle: '頼れるボス猫',
+        breed: '日本猫ミックス',
+        scale: 1.15,
+        collarDesc: '革首輪＋剣',
+        badgeColor: '#8c5e35'
+      },
+      mike: {
+        id: 'mike',
+        name: 'みけねこ',
+        subtitle: '元気な看板猫',
+        breed: '三毛猫',
+        scale: 0.85,
+        collarDesc: '緑リボン＋小瓶',
+        badgeColor: '#2e7d47'
+      },
+      shiro: {
+        id: 'shiro',
+        name: 'しろねこ',
+        subtitle: '気品ある白猫',
+        breed: 'ターキッシュアンゴラ',
+        scale: 0.98,
+        collarDesc: '黒リボン＋音符',
+        badgeColor: '#6d7a8c'
+      }
+    };
+    const CAT_IDS = ['kuro', 'kijitora', 'mike', 'shiro'];
+
+    /*************************************************************************
+     * 2. WEB AUDIO API SOUND ENGINE (Zero external files)
+     *************************************************************************/
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.enabled) {
+          this.init();
+          this.playBell(false);
+        }
+        return this.enabled;
+      }
+
+      // Jingle-bell sparkle chime for breaking blocks
+      playBell(isSpecial = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = isSpecial ? [1046.5, 1318.5, 1568, 2093] : [880 + Math.random() * 240, 1760];
+        notes.forEach((freq, i) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = i === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.045);
+          gain.gain.setValueAtTime(0.001, now + i * 0.045);
+          gain.gain.exponentialRampToValueAtTime(isSpecial ? 0.13 : 0.1, now + i * 0.045 + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + i * 0.045 + (isSpecial ? 0.42 : 0.24));
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + i * 0.045);
+          osc.stop(now + i * 0.045 + 0.45);
+        });
+      }
+
+      // Cozy wooden/marimba bounce for paddle & walls
+      playPaddle(isWall = false) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const base = isWall ? 330 : 480;
+        osc.frequency.setValueAtTime(base, now);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.35, now + 0.07);
+        gain.gain.setValueAtTime(0.11, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      }
+
+      // Springy cute "Poyon!" sound when hitting a sleeping cat
+      playBoing() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(590, now + 0.12);
+        osc.frequency.exponentialRampToValueAtTime(340, now + 0.22);
+        osc.frequency.exponentialRampToValueAtTime(490, now + 0.30);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.33);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.34);
+      }
+
+      // Cute "Nya!" synth sound for cat punch
+      playMeowSwat() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const filter = this.ctx.createBiquadFilter();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(540, now);
+        osc.frequency.exponentialRampToValueAtTime(980, now + 0.09);
+        osc.frequency.exponentialRampToValueAtTime(660, now + 0.24);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, now);
+        filter.Q.value = 3.2;
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(0.16, now + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      }
+
+      // Cheerful goal chime (+150pt)
+      playGoal() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freqs = [523.25, 659.25, 783.99, 1046.5];
+        freqs.forEach((f, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(f, now + idx * 0.06);
+          gain.gain.setValueAtTime(0.13, now + idx * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.26);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + idx * 0.06);
+          osc.stop(now + idx * 0.06 + 0.28);
+        });
+      }
+
+      // Festive finish fanfare
+      playFanfare() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const melody = [
+          { f: 523.25, t: 0.0, d: 0.16 },
+          { f: 659.25, t: 0.14, d: 0.16 },
+          { f: 783.99, t: 0.28, d: 0.16 },
+          { f: 1046.5, t: 0.44, d: 0.55 },
+          { f: 783.99, t: 0.44, d: 0.55 },
+          { f: 659.25, t: 0.44, d: 0.55 }
+        ];
+        melody.forEach((n) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(n.f, now + n.t);
+          gain.gain.setValueAtTime(0.12, now + n.t);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + n.t + n.d);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + n.t);
+          osc.stop(now + n.t + n.d + 0.02);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /*************************************************************************
+     * 2.5 BGM CONTROLLER (bgm.mp3 / bgm.wav Loop & Autoplay Unlock)
+     *************************************************************************/
+    class BGMController {
+      constructor() {
+        this.audio = null;
+        this.enabled = true;
+        this.volume = 0.38; // Balanced so Web Audio SE stays crisp
+      }
+
+      init() {
+        this.audio = document.getElementById('bgmAudio');
+        if (this.audio) {
+          this.audio.volume = this.volume;
+        }
+        this.updateButtonUI();
+      }
+
+      startIfEnabled() {
+        if (!this.enabled) return;
+        if (!this.audio) this.audio = document.getElementById('bgmAudio');
+        if (!this.audio) return;
+        this.audio.volume = this.volume;
+        if (this.audio.paused) {
+          const playPromise = this.audio.play();
+          if (playPromise && typeof playPromise.catch === 'function') {
+            playPromise.catch(() => {
+              // Safely ignore autoplay restrictions or missing bgm.mp3 file
+            });
+          }
+        }
+      }
+
+      toggle() {
+        this.enabled = !this.enabled;
+        if (!this.audio) this.audio = document.getElementById('bgmAudio');
+        if (this.audio) {
+          this.audio.volume = this.volume;
+          if (this.enabled) {
+            const playPromise = this.audio.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+              playPromise.catch(() => {});
+            }
+          } else {
+            this.audio.pause();
+          }
+        }
+        this.updateButtonUI();
+        return this.enabled;
+      }
+
+      updateButtonUI() {
+        const btn = document.getElementById('bgmToggleBtn');
+        if (!btn) return;
+        btn.setAttribute('aria-pressed', String(this.enabled));
+        if (this.enabled) {
+          btn.textContent = '🎵 BGM: ON';
+          btn.classList.remove('btn-cream');
+          btn.classList.add('btn-gold');
+        } else {
+          btn.textContent = '🔇 BGM: OFF';
+          btn.classList.remove('btn-gold');
+          btn.classList.add('btn-cream');
+        }
+      }
+    }
+
+    const bgm = new BGMController();
+
+    /*************************************************************************
+     * 3. STORYBOOK CAT ILLUSTRATION RENDERER (Canvas)
+     * Faithfully draws all 4 cats from 猫化設定.jpg with thick soft outlines,
+     * dot eyes, ω mouth, distinct fur patterns, collars, and emblem plates.
+     *************************************************************************/
+    function drawCat(ctx, typeId, x, y, options = {}) {
+      const {
+        scale = 1,
+        state = 'IDLE', // 'IDLE' | 'CHASE' | 'SLEEP' | 'SWAT'
+        time = 0,
+        facing = 1,
+        hitBounce = 0,
+        portrait = false,
+        showSantaAccent = true
+      } = options;
+
+      const meta = CAT_TYPES[typeId] || CAT_TYPES.kuro;
+      const finalScale = scale * (portrait ? 1 : meta.scale);
+      const outlineColor = '#3a2923';
+
+      ctx.save();
+      ctx.translate(x, y);
+
+      // Soft squash-and-stretch when hit while sleeping or trotting
+      let sx = finalScale;
+      let sy = finalScale;
+      if (hitBounce > 0) {
+        const wobble = Math.sin(hitBounce * Math.PI * 3) * 0.16 * hitBounce;
+        sx *= 1 + wobble;
+        sy *= 1 - wobble;
+      } else if (state === 'CHASE') {
+        const bob = Math.sin(time * 12) * 2.2;
+        ctx.translate(0, -Math.abs(bob));
+      }
+
+      ctx.scale(sx, sy);
+
+      // If sleeping in-game, draw a glowing solid-obstacle halo under the cat
+      if (!portrait && state === 'SLEEP') {
+        const pulse = 0.5 + 0.5 * Math.sin(time * 4.5);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(0, 4, 34 + pulse * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(244, 206, 108, 0.22)';
+        ctx.fill();
+        ctx.setLineDash([6, 5]);
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = 'rgba(214, 146, 36, 0.85)';
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Soft ground shadow
+      if (!portrait) {
+        ctx.beginPath();
+        ctx.ellipse(0, state === 'SLEEP' ? 20 : 25, state === 'SLEEP' ? 27 : 22, 7.5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = state === 'SLEEP' ? 'rgba(61, 43, 36, 0.22)' : 'rgba(61, 43, 36, 0.13)';
+        ctx.fill();
+      }
+
+      // Slight translucency while chasing to clearly indicate ball passes over
+      if (!portrait && state === 'CHASE') {
+        ctx.globalAlpha = 0.86;
+      }
+
+      // Fur colors by type
+      let furMain = '#2c2929';
+      let furEarInner = '#d98c8c';
+      let noseColor = '#e28f96';
+      if (typeId === 'kijitora') {
+        furMain = '#8f6d4a';
+        furEarInner = '#d49a89';
+        noseColor = '#5e3c2c';
+      } else if (typeId === 'mike') {
+        furMain = '#fffcf5';
+        furEarInner = '#e89b9b';
+        noseColor = '#e08989';
+      } else if (typeId === 'shiro') {
+        furMain = '#ffffff';
+        furEarInner = '#f2b3b8';
+        noseColor = '#eb9aa3';
+      }
+
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = outlineColor;
+      ctx.lineWidth = 2.6;
+
+      // ---------- TAIL ----------
+      ctx.save();
+      const tailWag = state === 'SLEEP'
+        ? Math.sin(time * 1.5) * 0.06
+        : Math.sin(time * (state === 'CHASE' ? 10 : 3.2)) * 0.24;
+      ctx.translate(facing >= 0 ? -16 : 16, state === 'SLEEP' ? 12 : 15);
+      ctx.scale(facing >= 0 ? 1 : -1, 1);
+      ctx.rotate(tailWag);
+
+      ctx.beginPath();
+      if (state === 'SLEEP') {
+        // Curled snug tail around body
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-14, 12, 8, 13);
+      } else if (typeId === 'shiro') {
+        // Fluffy flowing tail
+        ctx.moveTo(0, 2);
+        ctx.bezierCurveTo(-18, 6, -24, -10, -10, -14);
+      } else {
+        // Cute curved tail
+        ctx.moveTo(0, 2);
+        ctx.bezierCurveTo(-16, 4, -20, -14, -11, -18);
+      }
+      ctx.lineWidth = typeId === 'shiro' ? 9.5 : 7.5;
+      ctx.strokeStyle = outlineColor;
+      ctx.stroke();
+
+      ctx.lineWidth = typeId === 'shiro' ? 5.5 : 3.8;
+      ctx.strokeStyle = typeId === 'mike' ? '#df8738' : furMain;
+      ctx.stroke();
+
+      // Stripes on kijitora tail
+      if (typeId === 'kijitora') {
+        ctx.strokeStyle = '#47311d';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-11, -3);
+        ctx.lineTo(-15, -6);
+        ctx.moveTo(-13, -11);
+        ctx.lineTo(-17, -12);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // ---------- BODY ----------
+      ctx.save();
+      if (state === 'SLEEP') {
+        // Loaf / Curled nap body
+        ctx.beginPath();
+        ctx.ellipse(0, 9, 25, 16, 0, 0, Math.PI * 2);
+        ctx.fillStyle = furMain;
+        ctx.fill();
+        ctx.stroke();
+
+        // Calico patches on sleeping body
+        if (typeId === 'mike') {
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = '#e0893d';
+          ctx.beginPath();
+          ctx.arc(13, 6, 11, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#382f2b';
+          ctx.beginPath();
+          ctx.arc(-13, 10, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+          ctx.beginPath();
+          ctx.ellipse(0, 9, 25, 16, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        } else if (typeId === 'kijitora') {
+          // Tabby back stripes
+          ctx.strokeStyle = '#4a331e';
+          ctx.lineWidth = 2.4;
+          [-10, 0, 10].forEach(ox => {
+            ctx.beginPath();
+            ctx.moveTo(ox, -4);
+            ctx.quadraticCurveTo(ox + 2, 4, ox - 1, 10);
+            ctx.stroke();
+          });
+        }
+      } else {
+        // Sitting / Walking chubby cute body
+        const bodyW = typeId === 'kijitora' ? 20 : (typeId === 'kuro' ? 15.5 : 17);
+        const bodyH = typeId === 'mike' ? 16 : 18.5;
+        ctx.beginPath();
+        ctx.ellipse(0, 11, bodyW, bodyH, 0, 0, Math.PI * 2);
+        ctx.fillStyle = furMain;
+        ctx.fill();
+
+        // Body markings clipped cleanly
+        if (typeId === 'mike') {
+          ctx.save();
+          ctx.clip();
+          ctx.fillStyle = '#e0893d';
+          ctx.beginPath();
+          ctx.arc(12, 13, 9, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#382f2b';
+          ctx.beginPath();
+          ctx.arc(-11, 15, 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else if (typeId === 'kijitora') {
+          ctx.save();
+          ctx.clip();
+          ctx.strokeStyle = '#4a331e';
+          ctx.lineWidth = 2.4;
+          [-12, -5, 5, 12].forEach((ox) => {
+            ctx.beginPath();
+            ctx.moveTo(ox, 2);
+            ctx.lineTo(ox * 1.15, 12);
+            ctx.stroke();
+          });
+          // Soft lighter belly
+          ctx.fillStyle = '#b89872';
+          ctx.beginPath();
+          ctx.ellipse(0, 17, 9, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 2.6;
+        ctx.stroke();
+
+        // Cute Little Paws
+        const step = state === 'CHASE' ? Math.sin(time * 14) * 3.5 : 0;
+        const pawY = 23;
+        // Left paw
+        ctx.beginPath();
+        ctx.ellipse(-7, pawY + step * 0.6, 5.2, 4.2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = typeId === 'kijitora' ? '#b89872' : furMain;
+        ctx.fill();
+        ctx.stroke();
+        // Right paw (raises during SWAT!)
+        if (state === 'SWAT') {
+          ctx.save();
+          ctx.translate(15 * facing, 2);
+          ctx.rotate(-0.4 * facing);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 6.5, 5.5, 0, 0, Math.PI * 2);
+          ctx.fillStyle = typeId === 'kijitora' ? '#b89872' : furMain;
+          ctx.fill();
+          ctx.stroke();
+          // Pink paw pad
+          ctx.fillStyle = '#f29aa8';
+          ctx.beginPath();
+          ctx.arc(0, 1, 2.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        } else {
+          ctx.beginPath();
+          ctx.ellipse(7, pawY - step * 0.6, 5.2, 4.2, 0, 0, Math.PI * 2);
+          ctx.fillStyle = typeId === 'kijitora' ? '#b89872' : furMain;
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+
+      // ---------- HEAD ----------
+      ctx.save();
+      const headY = state === 'SLEEP' ? -1 : -10;
+      const headTilt = state === 'SLEEP' ? 0.08 : (state === 'CHASE' ? Math.sin(time * 7) * 0.05 : 0);
+      ctx.translate(0, headY);
+      ctx.rotate(headTilt);
+
+      // Ears (Back Layer)
+      const drawEar = (side) => {
+        ctx.save();
+        ctx.scale(side, 1);
+        ctx.beginPath();
+        ctx.moveTo(-15, -5);
+        ctx.quadraticCurveTo(-18, -22, -13, -24);
+        ctx.quadraticCurveTo(-6, -21, -3, -12);
+        ctx.closePath();
+        // Mike has orange left ear & dark right ear
+        if (typeId === 'mike') {
+          ctx.fillStyle = side === 1 ? '#e0893d' : '#382f2b';
+        } else {
+          ctx.fillStyle = furMain;
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // Inner Ear
+        ctx.beginPath();
+        ctx.moveTo(-13.5, -8);
+        ctx.quadraticCurveTo(-15, -18, -12, -19.5);
+        ctx.quadraticCurveTo(-8.5, -17.5, -6.5, -11.5);
+        ctx.closePath();
+        ctx.fillStyle = furEarInner;
+        ctx.fill();
+        ctx.restore();
+      };
+      drawEar(1);
+      drawEar(-1);
+
+      // Head Base Oval
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 19.5, 16, 0, 0, Math.PI * 2);
+      ctx.fillStyle = furMain;
+      ctx.fill();
+
+      // Head Patterns (Clipped)
+      ctx.save();
+      ctx.clip();
+      if (typeId === 'mike') {
+        // Orange left forehead patch
+        ctx.fillStyle = '#e0893d';
+        ctx.beginPath();
+        ctx.ellipse(-11, -11, 12, 10, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        // Dark brown/black right forehead patch
+        ctx.fillStyle = '#382f2b';
+        ctx.beginPath();
+        ctx.ellipse(11, -11, 11, 9.5, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (typeId === 'kijitora') {
+        // Forehead tabby stripes
+        ctx.strokeStyle = '#4a331e';
+        ctx.lineWidth = 2.5;
+        [-6, 0, 6].forEach((ox) => {
+          ctx.beginPath();
+          ctx.moveTo(ox, -18);
+          ctx.lineTo(ox * 0.8, -10);
+          ctx.stroke();
+        });
+        // Cheek stripes
+        [-1, 1].forEach((s) => {
+          ctx.beginPath();
+          ctx.moveTo(19 * s, -3);
+          ctx.lineTo(12 * s, -2);
+          ctx.moveTo(18 * s, 2);
+          ctx.lineTo(12 * s, 2.5);
+          ctx.stroke();
+        });
+      } else if (typeId === 'kuro') {
+        // Subtle soft warm sheen on black fur
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        ctx.beginPath();
+        ctx.ellipse(-5, -9, 9, 4.5, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (typeId === 'shiro') {
+        // Subtle soft silver-cream lower cheek shading
+        ctx.fillStyle = 'rgba(210, 218, 230, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(0, 12, 18, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // Head Outline
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 19.5, 16, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = outlineColor;
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+
+      // Cute Rosy Cheeks
+      ctx.fillStyle = typeId === 'kuro' ? 'rgba(235, 120, 130, 0.38)' : 'rgba(242, 145, 155, 0.45)';
+      ctx.beginPath();
+      ctx.ellipse(-10.5, 2.5, 3.6, 2.1, 0, 0, Math.PI * 2);
+      ctx.ellipse(10.5, 2.5, 3.6, 2.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes & Mouth (Simple dot eyes + ω mouth)
+      if (state === 'SLEEP') {
+        // Happy closed sleeping eyes (u u)
+        ctx.strokeStyle = typeId === 'kuro' ? '#e5d9d2' : outlineColor;
+        ctx.lineWidth = 2.1;
+        ctx.beginPath();
+        ctx.arc(-7.5, -1.5, 3.2, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(7.5, -1.5, 3.2, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+      } else {
+        // Simple adorable dot eyes
+        ctx.fillStyle = typeId === 'kuro' ? '#171313' : '#2b1e19';
+        ctx.beginPath();
+        ctx.arc(-7.5, -2, 2.7, 0, Math.PI * 2);
+        ctx.arc(7.5, -2, 2.7, 0, Math.PI * 2);
+        ctx.fill();
+        // Tiny eye highlight sparkle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(-8.3, -2.9, 1.0, 0, Math.PI * 2);
+        ctx.arc(6.7, -2.9, 1.0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Nose
+      ctx.fillStyle = noseColor;
+      ctx.beginPath();
+      ctx.ellipse(0, 1.2, 2.0, 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // ω Mouth
+      ctx.strokeStyle = typeId === 'kuro' ? '#8f7e78' : outlineColor;
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.moveTo(-3.4, 3.6);
+      ctx.quadraticCurveTo(-1.7, 5.4, 0, 3.3);
+      ctx.quadraticCurveTo(1.7, 5.4, 3.4, 3.6);
+      ctx.stroke();
+
+      // Whiskers
+      ctx.strokeStyle = typeId === 'kuro' ? '#635550' : '#4f3b32';
+      ctx.lineWidth = 1.4;
+      [-1, 1].forEach((s) => {
+        ctx.beginPath();
+        ctx.moveTo(15 * s, 0.5);
+        ctx.lineTo(22.5 * s, -0.5);
+        ctx.moveTo(15 * s, 3.5);
+        ctx.lineTo(22 * s, 4.5);
+        ctx.stroke();
+      });
+
+      // Tiny Festive Santa Hat tilted gently on top (leaves ears & markings clear!)
+      if (showSantaAccent) {
+        ctx.save();
+        ctx.translate(4, -17.5);
+        ctx.rotate(0.22);
+        // Hat cone
+        ctx.beginPath();
+        ctx.moveTo(-7, 2);
+        ctx.quadraticCurveTo(0, -10, 9, -7);
+        ctx.lineTo(6, 2);
+        ctx.closePath();
+        ctx.fillStyle = '#d43535';
+        ctx.fill();
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 1.8;
+        ctx.stroke();
+        // White brim
+        ctx.beginPath();
+        ctx.roundRect(-8, 0, 15, 4.2, 2);
+        ctx.fillStyle = '#fffdf8';
+        ctx.fill();
+        ctx.stroke();
+        // Pom-pom
+        ctx.beginPath();
+        ctx.arc(9.5, -6.5, 2.8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fffdf8';
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.restore(); // End head
+
+      // ---------- COLLAR & SIGNATURE EMBLEM MEDALLION ----------
+      ctx.save();
+      const collarY = state === 'SLEEP' ? 10 : 4;
+      ctx.translate(0, collarY);
+
+      if (typeId === 'kuro') {
+        // Red Ribbon + Gold Crown & Paw Medallion
+        drawRibbonCollar(ctx, '#c92a2a', '#e84c4c', outlineColor);
+        drawMedallion(ctx, '#f2c14e', '#d19822', outlineColor, 'crown');
+      } else if (typeId === 'kijitora') {
+        // Brown Leather Collar + Antique Bronze Sword & Paw Medallion
+        ctx.beginPath();
+        ctx.roundRect(-14, -3.5, 28, 6.2, 3);
+        ctx.fillStyle = '#6e4728';
+        ctx.fill();
+        ctx.strokeStyle = outlineColor;
+        ctx.lineWidth = 2.1;
+        ctx.stroke();
+        drawMedallion(ctx, '#b8844c', '#85582a', outlineColor, 'sword');
+      } else if (typeId === 'mike') {
+        // Green Ribbon + Emerald Potion Bottle & Paw Medallion
+        drawRibbonCollar(ctx, '#287a45', '#42a362', outlineColor);
+        drawMedallion(ctx, '#41ba74', '#e0b84c', outlineColor, 'potion');
+      } else if (typeId === 'shiro') {
+        // Black/Silver Ribbon + Silver Musical Note & Paw Medallion
+        drawRibbonCollar(ctx, '#2d3238', '#525b66', outlineColor);
+        drawMedallion(ctx, '#d4dce6', '#9aa6b5', outlineColor, 'note');
+      }
+      ctx.restore();
+
+      // ---------- STATE BUBBLES (SLEEP Zzz / SWAT !) ----------
+      if (!portrait && state === 'SLEEP') {
+        const floatY = Math.sin(time * 3) * 2.5;
+        ctx.save();
+        ctx.translate(22, -22 + floatY);
+        ctx.fillStyle = 'rgba(255, 253, 245, 0.94)';
+        ctx.strokeStyle = '#c99b44';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.roundRect(-16, -11, 32, 18, 9);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#8c5a18';
+        ctx.font = '800 10.5px "Fredoka", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Zzz', 0, -1.5);
+        ctx.restore();
+      } else if (!portrait && state === 'SWAT') {
+        ctx.save();
+        ctx.translate(0, -36);
+        ctx.fillStyle = '#e03e3e';
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 14px "Fredoka", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('!', 0, 1);
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // Helper: Cute Ribbon Collar
+    function drawRibbonCollar(ctx, darkCol, lightCol, outline) {
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2;
+      // Collar strap
+      ctx.beginPath();
+      ctx.roundRect(-13, -3.2, 26, 5.5, 2.8);
+      ctx.fillStyle = darkCol;
+      ctx.fill();
+      ctx.stroke();
+      // Ribbon bow wings
+      ctx.fillStyle = lightCol;
+      ctx.beginPath();
+      ctx.moveTo(-2, 0);
+      ctx.lineTo(-10, -4.5);
+      ctx.lineTo(-10, 4.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(2, 0);
+      ctx.lineTo(10, -4.5);
+      ctx.lineTo(10, 4.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Helper: Signature Medallion Plate
+    function drawMedallion(ctx, fillCol, rimCol, outline, motif) {
+      ctx.save();
+      ctx.translate(0, 5.2);
+      ctx.beginPath();
+      ctx.arc(0, 0, 6.8, 0, Math.PI * 2);
+      ctx.fillStyle = rimCol;
+      ctx.fill();
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, 5.0, 0, Math.PI * 2);
+      ctx.fillStyle = fillCol;
+      ctx.fill();
+
+      // Motif Icon inside medallion
+      ctx.fillStyle = '#3b2618';
+      ctx.strokeStyle = '#3b2618';
+      ctx.lineWidth = 1.2;
+      if (motif === 'crown') {
+        ctx.fillStyle = '#85530e';
+        ctx.beginPath();
+        ctx.moveTo(-3, 2);
+        ctx.lineTo(-3.2, -1.8);
+        ctx.lineTo(-1, 0);
+        ctx.lineTo(0, -2.5);
+        ctx.lineTo(1, 0);
+        ctx.lineTo(3.2, -1.8);
+        ctx.lineTo(3, 2);
+        ctx.closePath();
+        ctx.fill();
+      } else if (motif === 'sword') {
+        ctx.strokeStyle = '#4a2e14';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(0, -3.5);
+        ctx.lineTo(0, 3.2);
+        ctx.moveTo(-2.5, 0.8);
+        ctx.lineTo(2.5, 0.8);
+        ctx.stroke();
+      } else if (motif === 'potion') {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 1.2, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(-1, -3, 2, 2.5);
+      } else if (motif === 'note') {
+        ctx.fillStyle = '#2d3238';
+        ctx.beginPath();
+        ctx.arc(-1.2, 2, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillRect(0, -2.5, 1.2, 4.5);
+        ctx.fillRect(0, -2.5, 2.8, 1.2);
+      }
+      ctx.restore();
+    }
+
+    /*************************************************************************
+     * 4. BACKGROUND SNOWFALL EFFECT
+     *************************************************************************/
+    const bgSnowCanvas = document.getElementById('bgSnowCanvas');
+    const bgSnowCtx = bgSnowCanvas.getContext('2d');
+    let bgFlakes = [];
+
+    function resizeBgSnow() {
+      bgSnowCanvas.width = window.innerWidth;
+      bgSnowCanvas.height = window.innerHeight;
+      if (bgFlakes.length === 0) {
+        for (let i = 0; i < 65; i++) {
+          bgFlakes.push({
+            x: Math.random() * bgSnowCanvas.width,
+            y: Math.random() * bgSnowCanvas.height,
+            r: 1.5 + Math.random() * 3.2,
+            vy: 18 + Math.random() * 28,
+            vx: -10 + Math.random() * 20,
+            alpha: 0.35 + Math.random() * 0.55
+          });
+        }
+      }
+    }
+
+    function updateBgSnow(dt) {
+      bgSnowCtx.clearRect(0, 0, bgSnowCanvas.width, bgSnowCanvas.height);
+      for (const f of bgFlakes) {
+        f.y += f.vy * dt;
+        f.x += (f.vx + Math.sin(f.y * 0.015) * 12) * dt;
+        if (f.y > bgSnowCanvas.height + 6) {
+          f.y = -6;
+          f.x = Math.random() * bgSnowCanvas.width;
+        }
+        if (f.x < -10) f.x = bgSnowCanvas.width + 10;
+        if (f.x > bgSnowCanvas.width + 10) f.x = -10;
+        bgSnowCtx.beginPath();
+        bgSnowCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        bgSnowCtx.fillStyle = `rgba(255, 253, 245, ${f.alpha})`;
+        bgSnowCtx.fill();
+      }
+    }
+
+    /*************************************************************************
+     * 5. GAME CONSTANTS & STATE
+     *************************************************************************/
+    const W = 1000;
+    const H = 600;
+    const GAME_DURATION = 90; // seconds
+
+    const appState = {
+      mode: '2P', // '2P' | 'CPU' | 'ONLINE'
+      p1Cat: 'kuro',
+      p2Cat: 'shiro',
+      running: false,
+      paused: false,
+      gameOver: false,
+      timeLeft: GAME_DURATION,
+      elapsed: 0,
+      p1Score: 0,
+      p2Score: 0,
+      guestWave1Spawned: false,
+      guestWave2Spawned: false
+    };
+
+    /*************************************************************************
+     * 5.5 PEERJS ONLINE MULTIPLAYER STATE & HELPERS
+     *************************************************************************/
+    const PEER_PREFIX = 'xmas-cat-breakout-';
+    const net = {
+      peer: null,
+      conn: null,
+      role: null, // 'HOST' | 'GUEST' | null
+      roomCode: '',
+      connected: false,
+      lastSendTime: 0,
+      guestInput: { dir: 0, touchY: null },
+      pendingEvents: [] // events queued on host to play on guest
+    };
+
+    function isOnlineHost() {
+      return appState.mode === 'ONLINE' && net.role === 'HOST' && net.connected;
+    }
+
+    function isOnlineGuest() {
+      return appState.mode === 'ONLINE' && net.role === 'GUEST' && net.connected;
+    }
+
+    function queueNetEvent(ev) {
+      if (isOnlineHost()) {
+        net.pendingEvents.push(ev);
+      }
+    }
+
+    function setOnlineStatus(badgeText, msgText, badgeStyle = 'neutral') {
+      const badge = document.getElementById('onlineStatusBadge');
+      const msg = document.getElementById('onlineStatusMessage');
+      if (badge) {
+        badge.textContent = badgeText;
+        badge.className = 'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-extrabold border ';
+        if (badgeStyle === 'ok') {
+          badge.className += 'bg-[#e7faee] border-[#7dd39d] text-[#1d6e3d]';
+        } else if (badgeStyle === 'wait') {
+          badge.className += 'bg-[#fff6df] border-[#e8c468] text-[#8a6116]';
+        } else if (badgeStyle === 'err') {
+          badge.className += 'bg-[#ffecec] border-[#f0a3a3] text-[#b82b2b]';
+        } else {
+          badge.className += 'bg-white border-[#b9d6f5] text-[#3b6691]';
+        }
+      }
+      if (msg) msg.textContent = msgText;
+      updateStartButtonState();
+    }
+
+    function updateStartButtonState() {
+      const btn = document.getElementById('startGameBtn');
+      const label = document.getElementById('startGameBtnLabel');
+      const hint = document.getElementById('startHintText');
+      if (!btn || !label || !hint) return;
+
+      if (appState.mode !== 'ONLINE') {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+        label.textContent = 'ゲームスタート！';
+        hint.classList.add('hidden');
+        return;
+      }
+
+      if (!net.connected) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'pointer-events-none');
+        label.textContent = '接続するとスタートできるよ';
+        hint.textContent = 'まずは上のロビーで部屋をつくるか、合言葉で参加してね';
+        hint.classList.remove('hidden');
+      } else if (net.role === 'HOST') {
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'pointer-events-none');
+        label.textContent = 'オンライン対戦スタート！';
+        hint.textContent = '2Pと接続完了！好きな猫を選んでスタートを押してね';
+        hint.classList.remove('hidden');
+      } else {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'pointer-events-none');
+        label.textContent = '1Pのスタート待ち…';
+        hint.textContent = '1Pと接続完了！好きな猫を選んで待っててね';
+        hint.classList.remove('hidden');
+      }
+    }
+
+    function cleanupPeer() {
+      if (net.conn) {
+        try { net.conn.close(); } catch (_) {}
+        net.conn = null;
+      }
+      if (net.peer) {
+        try { net.peer.destroy(); } catch (_) {}
+        net.peer = null;
+      }
+      net.role = null;
+      net.roomCode = '';
+      net.connected = false;
+      net.guestInput = { dir: 0, touchY: null };
+      net.pendingEvents = [];
+      const hostCodeArea = document.getElementById('hostCodeArea');
+      if (hostCodeArea) hostCodeArea.classList.add('hidden');
+    }
+
+    function sendNet(payload) {
+      if (net.conn && net.conn.open) {
+        try {
+          net.conn.send(payload);
+        } catch (e) {
+          console.warn('Peer send failed:', e);
+        }
+      }
+    }
+
+    function createOnlineRoom() {
+      if (typeof Peer === 'undefined') {
+        setOnlineStatus('エラー', '通信ライブラリの読み込みに失敗しました。ページを再読み込みしてください。', 'err');
+        return;
+      }
+      cleanupPeer();
+      net.role = 'HOST';
+      net.roomCode = String(Math.floor(1000 + Math.random() * 9000));
+      const peerId = PEER_PREFIX + net.roomCode;
+
+      document.getElementById('hostRoomCode').textContent = net.roomCode;
+      document.getElementById('hostCodeArea').classList.remove('hidden');
+      setOnlineStatus('部屋を作成中…', '合言葉を発行しています…', 'wait');
+
+      try {
+        net.peer = new Peer(peerId);
+      } catch (err) {
+        setOnlineStatus('エラー', '通信の初期化に失敗しました。時間をおいて再度お試しください。', 'err');
+        return;
+      }
+
+      net.peer.on('open', () => {
+        setOnlineStatus('相手を待機中…', `合言葉「${net.roomCode}」を相手に教えて待っててね！`, 'wait');
+      });
+
+      net.peer.on('connection', (conn) => {
+        if (net.conn && net.conn.open) {
+          conn.close();
+          return;
+        }
+        setupConnection(conn);
+      });
+
+      net.peer.on('error', (err) => {
+        if (err.type === 'unavailable-id') {
+          createOnlineRoom(); // Retry with another random 4-digit code
+        } else {
+          setOnlineStatus('接続エラー', '通信エラーが発生しました（Wi-FiやVPN設定をご確認ください）。', 'err');
+        }
+      });
+    }
+
+    function joinOnlineRoom() {
+      if (typeof Peer === 'undefined') {
+        setOnlineStatus('エラー', '通信ライブラリの読み込みに失敗しました。ページを再読み込みしてください。', 'err');
+        return;
+      }
+      const raw = (document.getElementById('joinRoomInput').value || '').trim();
+      if (!/^\d{4}$/.test(raw)) {
+        setOnlineStatus('入力エラー', '4桁の数字（半角）を入力してください！', 'err');
+        return;
+      }
+      cleanupPeer();
+      net.role = 'GUEST';
+      net.roomCode = raw;
+      setOnlineStatus('接続中…', `合言葉「${raw}」の部屋を探しています…`, 'wait');
+
+      try {
+        net.peer = new Peer();
+      } catch (err) {
+        setOnlineStatus('エラー', '通信の初期化に失敗しました。', 'err');
+        return;
+      }
+
+      net.peer.on('open', () => {
+        const conn = net.peer.connect(PEER_PREFIX + raw, { reliable: true });
+        setupConnection(conn);
+      });
+
+      net.peer.on('error', (err) => {
+        if (err.type === 'peer-unavailable') {
+          setOnlineStatus('部屋が見つかりません', `合言葉「${raw}」の部屋が見つかりませんでした。番号を確認してね！`, 'err');
+        } else {
+          setOnlineStatus('接続エラー', '相手に接続できませんでした（Wi-FiやVPN設定をご確認ください）。', 'err');
+        }
+      });
+    }
+
+    function setupConnection(conn) {
+      net.conn = conn;
+
+      conn.on('open', () => {
+        net.connected = true;
+        sound.playBell(true);
+        if (net.role === 'HOST') {
+          setOnlineStatus('接続完了！', '2Pが参加しました！好きな猫を選んでスタートを押してね！', 'ok');
+          sendNet({ type: 'CAT_SYNC', p1Cat: appState.p1Cat, p2Cat: appState.p2Cat });
+        } else {
+          setOnlineStatus('接続完了！', '1Pの部屋に入りました！好きな猫を選んでスタートを待っててね！', 'ok');
+          sendNet({ type: 'CAT_SELECT', player: 2, catId: appState.p2Cat });
+        }
+        refreshSelectorHighlights();
+      });
+
+      conn.on('data', (data) => {
+        handleNetData(data);
+      });
+
+      conn.on('close', () => {
+        handlePeerDisconnect('相手との接続が切れました。');
+      });
+
+      conn.on('error', () => {
+        handlePeerDisconnect('通信エラーにより切断されました。');
+      });
+    }
+
+    function handlePeerDisconnect(message) {
+      const wasInGame = !document.getElementById('gameScreen').classList.contains('hidden');
+      net.connected = false;
+      net.conn = null;
+      if (wasInGame) {
+        appState.running = false;
+        appState.paused = false;
+        document.getElementById('disconnectMsg').textContent = message;
+        document.getElementById('disconnectOverlay').classList.remove('hidden');
+      } else {
+        setOnlineStatus('切断されました', message, 'err');
+      }
+    }
+
+    function handleNetData(data) {
+      if (!data || !data.type) return;
+
+      if (data.type === 'CAT_SYNC') {
+        appState.p1Cat = data.p1Cat;
+        appState.p2Cat = data.p2Cat;
+        refreshSelectorHighlights();
+      } else if (data.type === 'CAT_SELECT') {
+        if (data.player === 1) appState.p1Cat = data.catId;
+        else appState.p2Cat = data.catId;
+        refreshSelectorHighlights();
+      } else if (data.type === 'START_GAME') {
+        appState.p1Cat = data.p1Cat;
+        appState.p2Cat = data.p2Cat;
+        enterGameScreen();
+      } else if (data.type === 'GUEST_INPUT' && isOnlineHost()) {
+        net.guestInput.dir = data.dir || 0;
+        net.guestInput.touchY = typeof data.touchY === 'number' ? data.touchY : null;
+      } else if (data.type === 'STATE' && isOnlineGuest()) {
+        applyHostState(data);
+      } else if (data.type === 'GAME_OVER' && isOnlineGuest()) {
+        appState.p1Score = data.p1Score;
+        appState.p2Score = data.p2Score;
+        if (data.cats) {
+          cats = data.cats.map(c => ({ ...c, animTime: 0 }));
+        }
+        updateHUD();
+        finishGame(data.allCleared, true);
+      } else if (data.type === 'PAUSE_SYNC' && isOnlineGuest()) {
+        appState.paused = data.paused;
+        document.getElementById('pauseOverlay').classList.toggle('hidden', !appState.paused);
+      } else if (data.type === 'REMATCH_REQ' && isOnlineHost()) {
+        sound.playBell(false);
+        sendNet({ type: 'START_GAME', p1Cat: appState.p1Cat, p2Cat: appState.p2Cat });
+        resetGame();
+      } else if (data.type === 'GO_TITLE') {
+        appState.running = false;
+        appState.paused = false;
+        document.getElementById('gameScreen').classList.add('hidden');
+        document.getElementById('titleScreen').classList.remove('hidden');
+        updateStartButtonState();
+      }
+    }
+
+    function sendHostStateSnapshot() {
+      if (!isOnlineHost()) return;
+      const now = performance.now();
+      if (now - net.lastSendTime < 32) return; // ~30fps sync
+      net.lastSendTime = now;
+
+      const snapshot = {
+        type: 'STATE',
+        p1Y: Math.round(paddles[0].y),
+        p2Y: Math.round(paddles[1].y),
+        p1Score: appState.p1Score,
+        p2Score: appState.p2Score,
+        timeLeft: Number(appState.timeLeft.toFixed(1)),
+        balls: balls.map(b => ({
+          x: Math.round(b.x),
+          y: Math.round(b.y),
+          respawnTimer: Number(b.respawnTimer.toFixed(2))
+        })),
+        blocksAlive: blocks.map(b => (b.alive ? 1 : 0)),
+        cats: cats.map(c => ({
+          typeId: c.typeId,
+          name: c.name,
+          x: Math.round(c.x),
+          y: Math.round(c.y),
+          facing: c.facing,
+          state: c.state,
+          hitBounce: Number(c.hitBounce.toFixed(2)),
+          sleepBlocks: c.sleepBlocks,
+          swatCount: c.swatCount,
+          napCount: c.napCount
+        })),
+        events: net.pendingEvents.splice(0, net.pendingEvents.length)
+      };
+      sendNet(snapshot);
+    }
+
+    function applyHostState(s) {
+      if (paddles.length >= 2) {
+        paddles[0].y = s.p1Y;
+        paddles[1].y = s.p2Y;
+      }
+      appState.p1Score = s.p1Score;
+      appState.p2Score = s.p2Score;
+      appState.timeLeft = s.timeLeft;
+
+      if (s.balls && balls.length === s.balls.length) {
+        s.balls.forEach((sb, i) => {
+          const b = balls[i];
+          if (sb.respawnTimer > 0) {
+            b.trail = [];
+          } else {
+            b.trail.push({ x: b.x, y: b.y });
+            if (b.trail.length > 8) b.trail.shift();
+          }
+          b.x = sb.x;
+          b.y = sb.y;
+          b.respawnTimer = sb.respawnTimer;
+        });
+      }
+
+      if (s.blocksAlive && blocks.length === s.blocksAlive.length) {
+        for (let i = 0; i < blocks.length; i++) {
+          blocks[i].alive = s.blocksAlive[i] === 1;
+        }
+      }
+
+      if (s.cats) {
+        s.cats.forEach((sc, i) => {
+          if (!cats[i]) {
+            cats[i] = createCatEntity(sc.typeId, 'GUEST', sc.x, sc.y);
+          }
+          cats[i].typeId = sc.typeId;
+          cats[i].name = sc.name;
+          cats[i].x = sc.x;
+          cats[i].y = sc.y;
+          cats[i].facing = sc.facing;
+          cats[i].state = sc.state;
+          cats[i].hitBounce = sc.hitBounce;
+          cats[i].sleepBlocks = sc.sleepBlocks;
+          cats[i].swatCount = sc.swatCount;
+          cats[i].napCount = sc.napCount;
+        });
+      }
+
+      if (s.events && s.events.length > 0) {
+        for (const ev of s.events) {
+          if (ev.k === 'snd') {
+            if (ev.v === 'bell') sound.playBell(false);
+            else if (ev.v === 'bellSp') sound.playBell(true);
+            else if (ev.v === 'paddle') sound.playPaddle(false);
+            else if (ev.v === 'wall') sound.playPaddle(true);
+            else if (ev.v === 'boing') sound.playBoing();
+            else if (ev.v === 'meow') sound.playMeowSwat();
+            else if (ev.v === 'goal') sound.playGoal();
+          } else if (ev.k === 'pt') {
+            spawnParticles(ev.x, ev.y, ev.c, ev.n, ev.p, true);
+          } else if (ev.k === 'ft') {
+            addFloatingText(ev.x, ev.y, ev.t, ev.c, ev.s, true);
+          } else if (ev.k === 'tk') {
+            setTicker(ev.t, true);
+          }
+        }
+      }
+      updateHUD();
+    }
+
+    function sendGuestInputSnapshot() {
+      if (!isOnlineGuest()) return;
+      const now = performance.now();
+      if (now - net.lastSendTime < 30) return;
+      net.lastSendTime = now;
+
+      let dir = 0;
+      if (keys['KeyW'] || keys['ArrowUp']) dir -= 1;
+      if (keys['KeyS'] || keys['ArrowDown']) dir += 1;
+      const touchY = touchTargets.p2 !== null ? touchTargets.p2 : touchTargets.p1;
+      sendNet({ type: 'GUEST_INPUT', dir, touchY });
+    }
+
+    // Input State
+    const keys = {};
+    const touchTargets = { p1: null, p2: null }; // active touch Y in logical coords
+    const activeTouches = new Map(); // touchId -> 'p1' | 'p2'
+
+    // Game Entities
+    let paddles = [];
+    let balls = [];
+    let blocks = [];
+    let cats = [];
+    let particles = [];
+    let floatingTexts = [];
+    let courtSnow = [];
+
+    // Canvas references
+    const gameCanvas = document.getElementById('gameCanvas');
+    const ctx = gameCanvas.getContext('2d');
+
+    function resizeGameCanvas() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rect = gameCanvas.getBoundingClientRect();
+      const targetW = Math.max(300, Math.round(rect.width * dpr));
+      const targetH = Math.round(targetW * (H / W));
+      if (gameCanvas.width !== targetW || gameCanvas.height !== targetH) {
+        gameCanvas.width = targetW;
+        gameCanvas.height = targetH;
+      }
+    }
+
+    /*************************************************************************
+     * 6. LEVEL & ENTITY INITIALIZATION
+     *************************************************************************/
+    function createChristmasBlocks() {
+      blocks = [];
+      // Symmetrical Christmas Tree / Festive Diamond layout in center
+      // Columns centered around X = 500
+      const bw = 36;
+      const bh = 36;
+      const gapX = 10;
+      const gapY = 10;
+
+      // Pattern rows (symmetrical left-to-right & top-to-bottom diamond wreath + star core)
+      // Codes: S = Gold Star (300pt), G = Special Gift (300pt), R = Red Ornament (100pt),
+      //        E = Green/Holly (100pt), C = Candy Cane (100pt)
+      const pattern = [
+        '   S   ',
+        '  RGR  ',
+        ' CEREC ',
+        'RGSCSGR',
+        ' CEREC ',
+        '  RGR  ',
+        '   S   '
+      ];
+
+      const cols = pattern[0].length;
+      const rows = pattern.length;
+      const totalW = cols * bw + (cols - 1) * gapX;
+      const totalH = rows * bh + (rows - 1) * gapY;
+      const startX = (W - totalW) / 2;
+      const startY = (H - totalH) / 2;
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const ch = pattern[r][c];
+          if (ch === ' ') continue;
+          const isSpecial = ch === 'S' || ch === 'G';
+          blocks.push({
+            x: startX + c * (bw + gapX),
+            y: startY + r * (bh + gapY),
+            w: bw,
+            h: bh,
+            type: ch,
+            points: isSpecial ? 300 : 100,
+            alive: true,
+            shimmerOffset: (r + c) * 0.7
+          });
+        }
+      }
+    }
+
+    function createCatEntity(typeId, ownerTag, startX, startY) {
+      return {
+        typeId,
+        name: CAT_TYPES[typeId].name,
+        ownerTag, // '1P' | '2P' | 'GUEST'
+        x: startX,
+        y: startY,
+        vx: 0,
+        vy: 0,
+        facing: startX < W / 2 ? 1 : -1,
+        radius: Math.round(28 * CAT_TYPES[typeId].scale),
+        state: 'CHASE', // 'CHASE' | 'SLEEP' | 'SWAT'
+        stateTimer: 3.2 + Math.random() * 3.2,
+        swatCooldown: 3.0 + Math.random() * 2.5,
+        hitBounce: 0,
+        animTime: Math.random() * 10,
+        // Stats for MVP
+        sleepBlocks: 0,
+        swatCount: 0,
+        napCount: 0
+      };
+    }
+
+    function createBall(owner) {
+      const isP1 = owner === 1;
+      const angle = (Math.random() * 0.6 - 0.3); // slight vertical angle
+      const speed = 415;
+      return {
+        owner,
+        x: isP1 ? 105 : W - 105,
+        y: H / 2 + (isP1 ? -35 : 35),
+        vx: (isP1 ? 1 : -1) * Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        speed,
+        radius: 12,
+        trail: [],
+        respawnTimer: 0.45,
+        color: isP1 ? '#e83f3f' : '#26a65b',
+        glow: isP1 ? 'rgba(232, 63, 63, 0.45)' : 'rgba(38, 166, 91, 0.45)'
+      };
+    }
+
+    function resetGame() {
+      appState.running = true;
+      appState.paused = false;
+      appState.gameOver = false;
+      appState.timeLeft = GAME_DURATION;
+      appState.elapsed = 0;
+      appState.p1Score = 0;
+      appState.p2Score = 0;
+      appState.guestWave1Spawned = false;
+      appState.guestWave2Spawned = false;
+
+      paddles = [
+        { owner: 1, x: 42, y: H / 2 - 58, w: 18, h: 116, speed: 510, color: '#d63636', trim: '#fffdf7' },
+        { owner: 2, x: W - 60, y: H / 2 - 58, w: 18, h: 116, speed: 510, color: '#237a47', trim: '#fffdf7' }
+      ];
+
+      balls = [createBall(1), createBall(2)];
+      createChristmasBlocks();
+
+      cats = [
+        createCatEntity(appState.p1Cat, '1P', 230, 170),
+        createCatEntity(appState.p2Cat, '2P', W - 230, H - 170)
+      ];
+
+      particles = [];
+      floatingTexts = [];
+      courtSnow = [];
+      for (let i = 0; i < 28; i++) {
+        courtSnow.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: 1.5 + Math.random() * 2.3,
+          vy: 15 + Math.random() * 20,
+          alpha: 0.25 + Math.random() * 0.35
+        });
+      }
+
+      document.getElementById('pauseOverlay').classList.add('hidden');
+      document.getElementById('resultOverlay').classList.add('hidden');
+      document.getElementById('disconnectOverlay').classList.add('hidden');
+      updateHUD();
+      setTicker(`🐾 ${CAT_TYPES[appState.p1Cat].name} と ${CAT_TYPES[appState.p2Cat].name} がコートに登場！`);
+    }
+
+    /*************************************************************************
+     * 7. PARTICLES, FLOATING TEXTS & TICKER
+     *************************************************************************/
+    function spawnParticles(x, y, color, count = 12, isPaw = false, fromNet = false) {
+      if (!fromNet) queueNetEvent({ k: 'pt', x: Math.round(x), y: Math.round(y), c: color, n: count, p: isPaw });
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 55 + Math.random() * 165;
+        particles.push({
+          x, y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          size: isPaw ? (5 + Math.random() * 4) : (2.5 + Math.random() * 4),
+          color,
+          life: 0.45 + Math.random() * 0.35,
+          maxLife: 0.8,
+          isPaw
+        });
+      }
+    }
+
+    function addFloatingText(x, y, text, color = '#c93434', size = 20, fromNet = false) {
+      if (!fromNet) queueNetEvent({ k: 'ft', x: Math.round(x), y: Math.round(y), t: text, c: color, s: size });
+      floatingTexts.push({
+        x, y, text, color, size,
+        vy: -48,
+        life: 1.05,
+        maxLife: 1.05
+      });
+    }
+
+    function setTicker(msg, fromNet = false) {
+      if (!fromNet) queueNetEvent({ k: 'tk', t: msg });
+      const el = document.getElementById('catTicker');
+      const txt = document.getElementById('catTickerText');
+      txt.textContent = msg;
+      el.classList.remove('ticker-pop');
+      void el.offsetWidth;
+      el.classList.add('ticker-pop');
+    }
+
+    /*************************************************************************
+     * 8. GAME UPDATE & WHIMSICAL CAT AI
+     *************************************************************************/
+    function updateGame(dt) {
+      if (!appState.running || appState.paused || appState.gameOver) return;
+
+      // Online Guest: send input & animate local visual effects only
+      if (isOnlineGuest()) {
+        for (const cat of cats) {
+          cat.animTime += dt;
+        }
+        updateEffects(dt);
+        sendGuestInputSnapshot();
+        return;
+      }
+
+      appState.elapsed += dt;
+      appState.timeLeft = Math.max(0, appState.timeLeft - dt);
+
+      // Spawn Mid-game Guest Cats (max 4 cats total, nicely spaced)
+      if (!appState.guestWave1Spawned && appState.elapsed >= 25) {
+        appState.guestWave1Spawned = true;
+        spawnGuestCat();
+      }
+      if (!appState.guestWave2Spawned && appState.elapsed >= 55) {
+        appState.guestWave2Spawned = true;
+        spawnGuestCat();
+      }
+
+      updatePaddles(dt);
+      updateBalls(dt);
+      updateCats(dt);
+      updateEffects(dt);
+      updateHUD();
+
+      // Online Host: broadcast game state to Guest
+      sendHostStateSnapshot();
+
+      // Check End Conditions
+      const remainingBlocks = blocks.filter(b => b.alive).length;
+      if (appState.timeLeft <= 0 || remainingBlocks === 0) {
+        finishGame(remainingBlocks === 0);
+      }
+    }
+
+    function spawnGuestCat() {
+      if (cats.length >= 4) return;
+      const presentIds = new Set(cats.map(c => c.typeId));
+      const available = CAT_IDS.filter(id => !presentIds.has(id));
+      const nextId = available.length > 0
+        ? available[Math.floor(Math.random() * available.length)]
+        : CAT_IDS[Math.floor(Math.random() * CAT_IDS.length)];
+
+      const spawnX = W / 2 + (Math.random() < 0.5 ? -180 : 180);
+      const spawnY = Math.random() < 0.5 ? 90 : H - 90;
+      const guest = createCatEntity(nextId, 'GUEST', spawnX, spawnY);
+      cats.push(guest);
+      spawnParticles(spawnX, spawnY, '#f5dc96', 16, true);
+      addFloatingText(spawnX, spawnY - 26, `${guest.name} 参上！`, '#b87616', 18);
+      setTicker(`🐾 ${guest.name} が気まぐれに遊びに来たよ！`);
+      sound.playBell(true);
+      queueNetEvent({ k: 'snd', v: 'bellSp' });
+    }
+
+    function updatePaddles(dt) {
+      const p1 = paddles[0];
+      const p2 = paddles[1];
+      const topLimit = 30;
+      const botLimit = H - 30 - p1.h;
+
+      // 1P Control (W/S, or Arrow keys too when Online Host, or Touch)
+      if (keys['KeyW'] || (isOnlineHost() && keys['ArrowUp'])) p1.y -= p1.speed * dt;
+      if (keys['KeyS'] || (isOnlineHost() && keys['ArrowDown'])) p1.y += p1.speed * dt;
+      const p1Touch = isOnlineHost()
+        ? (touchTargets.p1 !== null ? touchTargets.p1 : touchTargets.p2)
+        : touchTargets.p1;
+      if (p1Touch !== null) {
+        const targetY = p1Touch - p1.h / 2;
+        const diff = targetY - p1.y;
+        p1.y += Math.max(-p1.speed * 1.4 * dt, Math.min(p1.speed * 1.4 * dt, diff));
+      }
+      p1.y = Math.max(topLimit, Math.min(botLimit, p1.y));
+
+      // 2P Control (CPU / Online Guest / Local 2P)
+      if (appState.mode === 'CPU') {
+        // Friendly, fun CPU AI: prioritizes threatening incoming ball on right side
+        let targetBall = balls[1];
+        let highestThreat = -Infinity;
+        for (const b of balls) {
+          if (b.respawnTimer > 0) continue;
+          const movingRight = b.vx > 0;
+          const threat = (movingRight ? 400 : 0) + b.x;
+          if (threat > highestThreat) {
+            highestThreat = threat;
+            targetBall = b;
+          }
+        }
+        const desiredY = targetBall.y - p2.h / 2 + Math.sin(appState.elapsed * 2.5) * 14;
+        const diff = desiredY - p2.y;
+        const cpuSpeed = p2.speed * 0.78;
+        if (Math.abs(diff) > 6) {
+          p2.y += Math.sign(diff) * Math.min(Math.abs(diff), cpuSpeed * dt);
+        }
+      } else if (isOnlineHost()) {
+        if (net.guestInput.dir !== 0) {
+          p2.y += net.guestInput.dir * p2.speed * dt;
+        }
+        if (net.guestInput.touchY !== null) {
+          const targetY = net.guestInput.touchY - p2.h / 2;
+          const diff = targetY - p2.y;
+          p2.y += Math.max(-p2.speed * 1.4 * dt, Math.min(p2.speed * 1.4 * dt, diff));
+        }
+      } else {
+        if (keys['ArrowUp']) p2.y -= p2.speed * dt;
+        if (keys['ArrowDown']) p2.y += p2.speed * dt;
+        if (touchTargets.p2 !== null) {
+          const targetY = touchTargets.p2 - p2.h / 2;
+          const diff = targetY - p2.y;
+          p2.y += Math.max(-p2.speed * 1.4 * dt, Math.min(p2.speed * 1.4 * dt, diff));
+        }
+      }
+      p2.y = Math.max(topLimit, Math.min(botLimit, p2.y));
+    }
+
+    function normalizeBallVelocity(b) {
+      // Keep ball speed consistent & prevent near-vertical infinite loops
+      const minVx = b.speed * 0.36;
+      if (Math.abs(b.vx) < minVx) {
+        b.vx = (b.vx >= 0 ? 1 : -1) * minVx;
+      }
+      const mag = Math.hypot(b.vx, b.vy) || 1;
+      b.vx = (b.vx / mag) * b.speed;
+      b.vy = (b.vy / mag) * b.speed;
+    }
+
+    function respawnBall(b) {
+      const isP1 = b.owner === 1;
+      const p = isP1 ? paddles[0] : paddles[1];
+      b.x = isP1 ? p.x + p.w + 26 : p.x - 26;
+      b.y = p.y + p.h / 2;
+      const angle = (Math.random() * 0.7 - 0.35);
+      b.vx = (isP1 ? 1 : -1) * Math.cos(angle) * b.speed;
+      b.vy = Math.sin(angle) * b.speed;
+      b.trail = [];
+      b.respawnTimer = 0.65;
+    }
+
+    function updateBalls(dt) {
+      const topWall = 26;
+      const botWall = H - 26;
+
+      for (const b of balls) {
+        if (b.respawnTimer > 0) {
+          b.respawnTimer -= dt;
+          // Gently track owner paddle while serving
+          const p = b.owner === 1 ? paddles[0] : paddles[1];
+          b.y = p.y + p.h / 2;
+          continue;
+        }
+
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > 10) b.trail.shift();
+
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+
+        // Top & Bottom Walls
+        if (b.y - b.radius < topWall) {
+          b.y = topWall + b.radius;
+          b.vy = Math.abs(b.vy);
+          sound.playPaddle(true);
+          queueNetEvent({ k: 'snd', v: 'wall' });
+        } else if (b.y + b.radius > botWall) {
+          b.y = botWall - b.radius;
+          b.vy = -Math.abs(b.vy);
+          sound.playPaddle(true);
+          queueNetEvent({ k: 'snd', v: 'wall' });
+        }
+
+        // Left & Right Goals (Back Walls)
+        if (b.x - b.radius < 8) {
+          // Hit Left Wall (1P's back wall) -> if 2P's ball, 2P scores +150pt!
+          if (b.owner === 2) {
+            appState.p2Score += 150;
+            addFloatingText(110, b.y, 'GOAL! +150pt', '#237a47', 22);
+            spawnParticles(20, b.y, '#2ecc71', 18);
+            sound.playGoal();
+            queueNetEvent({ k: 'snd', v: 'goal' });
+          }
+          respawnBall(b);
+          continue;
+        } else if (b.x + b.radius > W - 8) {
+          // Hit Right Wall (2P's back wall) -> if 1P's ball, 1P scores +150pt!
+          if (b.owner === 1) {
+            appState.p1Score += 150;
+            addFloatingText(W - 110, b.y, 'GOAL! +150pt', '#c93434', 22);
+            spawnParticles(W - 20, b.y, '#ff5252', 18);
+            sound.playGoal();
+            queueNetEvent({ k: 'snd', v: 'goal' });
+          }
+          respawnBall(b);
+          continue;
+        }
+
+        // Paddle Collisions (both paddles can deflect both balls!)
+        for (const p of paddles) {
+          if (circleRectOverlap(b.x, b.y, b.radius, p.x, p.y, p.w, p.h)) {
+            const relY = ((b.y - (p.y + p.h / 2)) / (p.h / 2));
+            const clampedRel = Math.max(-0.95, Math.min(0.95, relY));
+            const bounceAngle = clampedRel * (Math.PI / 3.1);
+            const dir = p.owner === 1 ? 1 : -1;
+            b.vx = dir * Math.cos(bounceAngle) * b.speed;
+            b.vy = Math.sin(bounceAngle) * b.speed;
+            b.x = p.owner === 1 ? p.x + p.w + b.radius + 1 : p.x - b.radius - 1;
+            spawnParticles(b.x, b.y, p.color, 7);
+            sound.playPaddle(false);
+            queueNetEvent({ k: 'snd', v: 'paddle' });
+          }
+        }
+
+        // Block Collisions
+        for (const blk of blocks) {
+          if (!blk.alive) continue;
+          if (circleRectOverlap(b.x, b.y, b.radius, blk.x, blk.y, blk.w, blk.h)) {
+            blk.alive = false;
+
+            // Determine reflection axis
+            const cx = blk.x + blk.w / 2;
+            const cy = blk.y + blk.h / 2;
+            const dx = b.x - cx;
+            const dy = b.y - cy;
+            if (Math.abs(dx / blk.w) > Math.abs(dy / blk.h)) {
+              b.vx = dx >= 0 ? Math.abs(b.vx) : -Math.abs(b.vx);
+            } else {
+              b.vy = dy >= 0 ? Math.abs(b.vy) : -Math.abs(b.vy);
+            }
+            normalizeBallVelocity(b);
+
+            // Award score to ball owner
+            if (b.owner === 1) appState.p1Score += blk.points;
+            else appState.p2Score += blk.points;
+
+            const isSpecial = blk.points >= 300;
+            const pColor = blk.type === 'S' ? '#f5cf5b' : (blk.type === 'G' ? '#ff7676' : '#5bd68a');
+            spawnParticles(cx, cy, pColor, isSpecial ? 18 : 11);
+            addFloatingText(
+              cx, cy - 8,
+              `+${blk.points}`,
+              b.owner === 1 ? '#c93434' : '#1e7a44',
+              isSpecial ? 22 : 16
+            );
+            sound.playBell(isSpecial);
+            queueNetEvent({ k: 'snd', v: isSpecial ? 'bellSp' : 'bell' });
+            break; // one block per frame per ball
+          }
+        }
+
+        // Sleeping Cat Obstacle Collisions (ONLY when cat.state === 'SLEEP')
+        for (const cat of cats) {
+          if (cat.state !== 'SLEEP') continue;
+          const dx = b.x - cat.x;
+          const dy = b.y - cat.y;
+          const dist = Math.hypot(dx, dy);
+          const minDist = b.radius + cat.radius;
+          if (dist < minDist && dist > 0.001) {
+            const nx = dx / dist;
+            const ny = dy / dist;
+            // Push ball out cleanly
+            b.x = cat.x + nx * (minDist + 2);
+            b.y = cat.y + ny * (minDist + 2);
+
+            // Reflect velocity
+            const dot = b.vx * nx + b.vy * ny;
+            if (dot < 0) {
+              b.vx -= 2 * dot * nx;
+              b.vy -= 2 * dot * ny;
+              normalizeBallVelocity(b);
+            }
+
+            cat.hitBounce = 1.0;
+            cat.sleepBlocks++;
+            spawnParticles(b.x, b.y, '#f5c26b', 10, true);
+            addFloatingText(cat.x, cat.y - 34, 'ポヨン！', '#c97a16', 17);
+            sound.playBoing();
+            queueNetEvent({ k: 'snd', v: 'boing' });
+          }
+        }
+      }
+    }
+
+    function updateCats(dt) {
+      for (const cat of cats) {
+        cat.animTime += dt;
+        cat.stateTimer -= dt;
+        if (cat.swatCooldown > 0) cat.swatCooldown -= dt;
+        if (cat.hitBounce > 0) cat.hitBounce = Math.max(0, cat.hitBounce - dt * 2.4);
+
+        if (cat.state === 'CHASE') {
+          // Find nearest active ball
+          let nearest = null;
+          let minD = Infinity;
+          for (const b of balls) {
+            if (b.respawnTimer > 0) continue;
+            const d = Math.hypot(b.x - cat.x, b.y - cat.y);
+            if (d < minD) {
+              minD = d;
+              nearest = b;
+            }
+          }
+
+          if (nearest) {
+            const dx = nearest.x - cat.x;
+            const dy = nearest.y - cat.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const walkSpeed = 128 + (cat.typeId === 'mike' ? 22 : (cat.typeId === 'kijitora' ? -12 : 0));
+
+            // Keep cats inside the court playfield away from paddle edges
+            const targetX = Math.max(135, Math.min(W - 135, nearest.x));
+            const targetY = Math.max(72, Math.min(H - 72, nearest.y));
+            const tdx = targetX - cat.x;
+            const tdy = targetY - cat.y;
+            const tdist = Math.hypot(tdx, tdy) || 1;
+
+            if (tdist > 12) {
+              cat.vx = (tdx / tdist) * walkSpeed;
+              cat.vy = (tdy / tdist) * walkSpeed;
+              cat.x += cat.vx * dt;
+              cat.y += cat.vy * dt;
+              if (Math.abs(cat.vx) > 8) cat.facing = cat.vx >= 0 ? 1 : -1;
+            }
+
+            // RARE CAT PUNCH (SWAT): very low probability when catching up right next to a ball!
+            if (dist < 46 && cat.swatCooldown <= 0) {
+              // ~1.5% chance per frame while close (~rare & delightful!)
+              if (Math.random() < 0.022) {
+                triggerCatSwat(cat, nearest);
+                continue;
+              }
+            }
+          }
+
+          // Gently separate cats so they don't overlap each other
+          for (const other of cats) {
+            if (other === cat) continue;
+            const ox = cat.x - other.x;
+            const oy = cat.y - other.y;
+            const od = Math.hypot(ox, oy);
+            if (od < 68 && od > 0.1) {
+              cat.x += (ox / od) * 55 * dt;
+              cat.y += (oy / od) * 55 * dt;
+            }
+          }
+
+          // Clamp to safe inner court
+          cat.x = Math.max(130, Math.min(W - 130, cat.x));
+          cat.y = Math.max(70, Math.min(H - 70, cat.y));
+
+          // Whimsically decide to stop & nap!
+          if (cat.stateTimer <= 0) {
+            cat.state = 'SLEEP';
+            cat.stateTimer = 4.2 + Math.random() * 2.6;
+            cat.napCount++;
+            setTicker(`💤 ${cat.name} がお昼寝を始めたよ！（ボールが跳ね返る障害物に！）`);
+          }
+
+        } else if (cat.state === 'SLEEP') {
+          if (cat.stateTimer <= 0) {
+            cat.state = 'CHASE';
+            cat.stateTimer = 3.8 + Math.random() * 3.5;
+            setTicker(`🐾 ${cat.name} が起きてボールを追いかけ始めたよ！`);
+          }
+        } else if (cat.state === 'SWAT') {
+          if (cat.stateTimer <= 0) {
+            cat.state = 'CHASE';
+            cat.stateTimer = 3.0 + Math.random() * 3.0;
+          }
+        }
+      }
+    }
+
+    function triggerCatSwat(cat, ball) {
+      cat.state = 'SWAT';
+      cat.stateTimer = 0.55;
+      cat.swatCooldown = 7.5;
+      cat.swatCount++;
+      cat.facing = ball.x >= cat.x ? 1 : -1;
+
+      // Dramatic whimsical deflection!
+      const randomAngle = (Math.random() * Math.PI * 2);
+      ball.vx = Math.cos(randomAngle) * ball.speed;
+      ball.vy = Math.sin(randomAngle) * ball.speed;
+      normalizeBallVelocity(ball);
+
+      spawnParticles(ball.x, ball.y, '#ff8fab', 16, true);
+      addFloatingText(cat.x, cat.y - 38, 'にゃっ！🐾', '#d63636', 22);
+      setTicker(`⚡ ${cat.name} の気まぐれ猫パンチ！ボールの軌道が変わった！`);
+      sound.playMeowSwat();
+      queueNetEvent({ k: 'snd', v: 'meow' });
+    }
+
+    function updateEffects(dt) {
+      // Particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      // Floating texts
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.life -= dt;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+
+      // Gentle indoor court snow sparkle
+      for (const s of courtSnow) {
+        s.y += s.vy * dt;
+        s.x += Math.sin(s.y * 0.02) * 8 * dt;
+        if (s.y > H) {
+          s.y = -5;
+          s.x = Math.random() * W;
+        }
+      }
+    }
+
+    function circleRectOverlap(cx, cy, r, rx, ry, rw, rh) {
+      const closestX = Math.max(rx, Math.min(cx, rx + rw));
+      const closestY = Math.max(ry, Math.min(cy, ry + rh));
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return (dx * dx + dy * dy) <= r * r;
+    }
+
+    /*************************************************************************
+     * 9. MAIN GAME CANVAS RENDERER
+     *************************************************************************/
+    function renderGame() {
+      const scaleX = gameCanvas.width / W;
+      const scaleY = gameCanvas.height / H;
+
+      ctx.save();
+      ctx.scale(scaleX, scaleY);
+
+      // 1. Cozy Christmas Rug Court Background
+      drawCourtBackground();
+
+      // 2. Center Christmas Blocks
+      drawBlocks();
+
+      // 3. Chasing Cats (drawn UNDER balls so ball visually passes over them)
+      for (const cat of cats) {
+        if (cat.state === 'CHASE') {
+          drawCat(ctx, cat.typeId, cat.x, cat.y, {
+            state: cat.state,
+            time: cat.animTime,
+            facing: cat.facing,
+            hitBounce: cat.hitBounce
+          });
+        }
+      }
+
+      // 4. Sleeping & Swatting Cats (solid obstacles / active punch)
+      for (const cat of cats) {
+        if (cat.state !== 'CHASE') {
+          drawCat(ctx, cat.typeId, cat.x, cat.y, {
+            state: cat.state,
+            time: cat.animTime,
+            facing: cat.facing,
+            hitBounce: cat.hitBounce
+          });
+        }
+      }
+
+      // 5. Paddles (Santa Red & Christmas Green)
+      drawPaddles();
+
+      // 6. Glowing Ornament Balls
+      drawBalls();
+
+      // 7. Particles, Snowflakes & Floating Texts
+      drawEffects();
+
+      // 8. Top & Bottom Christmas Illumination Lights Frame
+      drawIlluminationBorders();
+
+      ctx.restore();
+    }
+
+    function drawCourtBackground() {
+      // Warm cream rug base
+      const grad = ctx.createRadialGradient(W / 2, H / 2, 60, W / 2, H / 2, W * 0.65);
+      grad.addColorStop(0, '#fffaf0');
+      grad.addColorStop(1, '#efe1c4');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      // Subtle cozy plaid/woven lines
+      ctx.strokeStyle = 'rgba(186, 152, 102, 0.13)';
+      ctx.lineWidth = 1;
+      for (let x = 60; x < W; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, 26);
+        ctx.lineTo(x, H - 26);
+        ctx.stroke();
+      }
+      for (let y = 60; y < H; y += 60) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+
+      // Left (1P) & Right (2P) subtle goal zones
+      ctx.fillStyle = 'rgba(214, 54, 54, 0.06)';
+      ctx.fillRect(0, 26, 78, H - 52);
+      ctx.fillStyle = 'rgba(35, 122, 71, 0.06)';
+      ctx.fillRect(W - 78, 26, 78, H - 52);
+
+      // Stitched rug inner border
+      ctx.save();
+      ctx.strokeStyle = 'rgba(181, 137, 74, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.strokeRect(18, 36, W - 36, H - 72);
+
+      // Center vertical dashed divider
+      ctx.beginPath();
+      ctx.moveTo(W / 2, 36);
+      ctx.lineTo(W / 2, H - 36);
+      ctx.strokeStyle = 'rgba(181, 137, 74, 0.32)';
+      ctx.stroke();
+      ctx.restore();
+
+      // Subtle decorative Christmas wreath ring in center
+      ctx.beginPath();
+      ctx.arc(W / 2, H / 2, 165, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(46, 125, 71, 0.08)';
+      ctx.lineWidth = 14;
+      ctx.stroke();
+    }
+
+    function drawIlluminationBorders() {
+      // Dark forest green top & bottom garland strips
+      ctx.fillStyle = '#1b4731';
+      ctx.fillRect(0, 0, W, 26);
+      ctx.fillRect(0, H - 26, W, 26);
+
+      // Gold trim line
+      ctx.fillStyle = '#e8c468';
+      ctx.fillRect(0, 24, W, 2.5);
+      ctx.fillRect(0, H - 26.5, W, 2.5);
+
+      // Twinkling Fairy Bulbs & Holly accents
+      const bulbColors = ['#ff5959', '#ffe066', '#4ce08c', '#ffd166'];
+      const t = performance.now() * 0.003;
+      for (let i = 0; i < 20; i++) {
+        const bx = 28 + i * 49.5;
+        const col = bulbColors[i % bulbColors.length];
+        const glow = 0.55 + 0.45 * Math.sin(t + i * 0.9);
+
+        [13, H - 13].forEach((by) => {
+          // Glow halo
+          ctx.beginPath();
+          ctx.arc(bx, by, 7.5, 0, Math.PI * 2);
+          ctx.fillStyle = col;
+          ctx.globalAlpha = 0.25 * glow;
+          ctx.fill();
+
+          // Bulb core
+          ctx.globalAlpha = 0.65 + 0.35 * glow;
+          ctx.beginPath();
+          ctx.arc(bx, by, 4.3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        });
+      }
+    }
+
+    function drawBlocks() {
+      const t = performance.now() * 0.004;
+      for (const blk of blocks) {
+        if (!blk.alive) continue;
+        const { x, y, w, h, type } = blk;
+        const cx = x + w / 2;
+        const cy = y + h / 2;
+
+        ctx.save();
+        ctx.strokeStyle = '#3d2b24';
+        ctx.lineWidth = 2.2;
+
+        if (type === 'S') {
+          // Gold Star Block (300pt)
+          const pulse = 1 + Math.sin(t + blk.shimmerOffset) * 0.06;
+          ctx.translate(cx, cy);
+          ctx.scale(pulse, pulse);
+          // Warm glow
+          ctx.beginPath();
+          ctx.arc(0, 0, 20, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(247, 208, 92, 0.35)';
+          ctx.fill();
+          // 5-point Star
+          drawStarPath(ctx, 0, 0, 5, 17, 8);
+          ctx.fillStyle = '#f5cb53';
+          ctx.fill();
+          ctx.stroke();
+          // Center sparkle
+          ctx.fillStyle = '#fff9db';
+          ctx.beginPath();
+          ctx.arc(-3, -3, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (type === 'G') {
+          // Special Gift Box (300pt)
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 8);
+          ctx.fillStyle = '#e04848';
+          ctx.fill();
+          ctx.stroke();
+          // Gold Ribbon Cross
+          ctx.fillStyle = '#f5cf5b';
+          ctx.fillRect(cx - 3.5, y + 3, 7, h - 6);
+          ctx.fillRect(x + 3, cy - 3.5, w - 6, 7);
+          // Ribbon Bow on top
+          ctx.beginPath();
+          ctx.arc(cx - 4, y + 5, 4, 0, Math.PI * 2);
+          ctx.arc(cx + 4, y + 5, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffe58f';
+          ctx.fill();
+          ctx.stroke();
+        } else if (type === 'R') {
+          // Red Christmas Ornament (100pt)
+          ctx.beginPath();
+          ctx.arc(cx, cy + 1, 15.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#d94343';
+          ctx.fill();
+          ctx.stroke();
+          // Gold cap
+          ctx.fillStyle = '#e8c468';
+          ctx.fillRect(cx - 4.5, y + 1, 9, 4.5);
+          ctx.strokeRect(cx - 4.5, y + 1, 9, 4.5);
+          // Highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.45)';
+          ctx.beginPath();
+          ctx.ellipse(cx - 5, cy - 4, 4, 2.5, -0.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (type === 'E') {
+          // Emerald Green Holly Block (100pt)
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 9);
+          ctx.fillStyle = '#2d8a54';
+          ctx.fill();
+          ctx.stroke();
+          // Little red holly berries
+          ctx.fillStyle = '#e84545';
+          ctx.beginPath();
+          ctx.arc(cx - 3, cy + 1, 3.2, 0, Math.PI * 2);
+          ctx.arc(cx + 3, cy + 1, 3.2, 0, Math.PI * 2);
+          ctx.arc(cx, cy - 3.5, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Candy Cane Striped Block (100pt)
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 9);
+          ctx.fillStyle = '#fffaf0';
+          ctx.fill();
+          ctx.save();
+          ctx.clip();
+          ctx.strokeStyle = '#e04848';
+          ctx.lineWidth = 5;
+          for (let i = -20; i < 50; i += 12) {
+            ctx.beginPath();
+            ctx.moveTo(x + i, y);
+            ctx.lineTo(x + i - 18, y + h);
+            ctx.stroke();
+          }
+          ctx.restore();
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 9);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawStarPath(ctx, cx, cy, spikes, outerR, innerR) {
+      let rot = (Math.PI / 2) * 3;
+      const step = Math.PI / spikes;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - outerR);
+      for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+      }
+      ctx.closePath();
+    }
+
+    function drawPaddles() {
+      for (const p of paddles) {
+        ctx.save();
+        // Drop shadow
+        ctx.fillStyle = 'rgba(61, 43, 36, 0.2)';
+        ctx.beginPath();
+        ctx.roundRect(p.x + 3, p.y + 4, p.w, p.h, 9);
+        ctx.fill();
+
+        // Main paddle body
+        ctx.beginPath();
+        ctx.roundRect(p.x, p.y, p.w, p.h, 9);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.lineWidth = 2.6;
+        ctx.strokeStyle = '#3d2b24';
+        ctx.stroke();
+
+        // Fluffy white Santa trim at top & bottom ends
+        ctx.fillStyle = p.trim;
+        ctx.beginPath();
+        ctx.roundRect(p.x - 1, p.y - 1, p.w + 2, 14, 6);
+        ctx.roundRect(p.x - 1, p.y + p.h - 13, p.w + 2, 14, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        // Gold belt buckle in center
+        ctx.fillStyle = '#f2c85b';
+        ctx.beginPath();
+        ctx.roundRect(p.x + 2, p.y + p.h / 2 - 8, p.w - 4, 16, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    function drawBalls() {
+      for (const b of balls) {
+        // Trail
+        for (let i = 0; i < b.trail.length; i++) {
+          const pt = b.trail[i];
+          const ratio = (i + 1) / b.trail.length;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, b.radius * ratio * 0.72, 0, Math.PI * 2);
+          ctx.fillStyle = b.owner === 1
+            ? `rgba(232, 63, 63, ${ratio * 0.28})`
+            : `rgba(38, 166, 91, ${ratio * 0.28})`;
+          ctx.fill();
+        }
+
+        ctx.save();
+        if (b.respawnTimer > 0) {
+          ctx.globalAlpha = 0.55 + 0.4 * Math.sin(performance.now() * 0.02);
+        }
+
+        // Outer Christmas glow
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius + 5, 0, Math.PI * 2);
+        ctx.fillStyle = b.glow;
+        ctx.fill();
+
+        // Ornament Ball Sphere
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fillStyle = b.color;
+        ctx.fill();
+        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = '#3d2b24';
+        ctx.stroke();
+
+        // Gold ornament cap & glossy highlight
+        ctx.fillStyle = '#f5d26b';
+        ctx.fillRect(b.x - 3.5, b.y - b.radius - 2, 7, 4);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+        ctx.beginPath();
+        ctx.arc(b.x - 3.5, b.y - 3.5, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function drawEffects() {
+      // Gentle court snow
+      for (const s of courtSnow) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+        ctx.fill();
+      }
+
+      // Particles
+      for (const p of particles) {
+        const a = Math.max(0, p.life / p.maxLife);
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(p.x, p.y);
+        if (p.isPaw) {
+          // Cute mini paw print particle
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(0, 1, p.size * 0.55, 0, Math.PI * 2);
+          ctx.arc(-p.size * 0.5, -p.size * 0.45, p.size * 0.28, 0, Math.PI * 2);
+          ctx.arc(0, -p.size * 0.65, p.size * 0.28, 0, Math.PI * 2);
+          ctx.arc(p.size * 0.5, -p.size * 0.45, p.size * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Floating Texts
+      for (const ft of floatingTexts) {
+        const a = Math.max(0, Math.min(1, (ft.life / ft.maxLife) * 1.4));
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.font = `800 ${ft.size}px "M PLUS Rounded 1c", "Fredoka", sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#fffdf8';
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+    }
+
+    /*************************************************************************
+     * 10. HUD UPDATE & GAME FINISH
+     *************************************************************************/
+    function updateHUD() {
+      const p1El = document.getElementById('p1ScoreDisplay');
+      const p2El = document.getElementById('p2ScoreDisplay');
+      const timerEl = document.getElementById('timerDisplay');
+      const blocksEl = document.getElementById('blocksLeftDisplay');
+
+      if (p1El) p1El.textContent = appState.p1Score;
+      if (p2El) p2El.textContent = appState.p2Score;
+
+      if (timerEl) {
+        const secTotal = Math.max(0, Math.ceil(appState.timeLeft));
+        const mins = Math.floor(secTotal / 60);
+        const secs = secTotal % 60;
+        timerEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+      }
+
+      if (blocksEl) {
+        blocksEl.textContent = blocks.filter(b => b.alive).length;
+      }
+    }
+
+    function finishGame(allCleared, fromNet = false) {
+      appState.gameOver = true;
+      appState.running = false;
+      sound.playFanfare();
+
+      if (!fromNet && isOnlineHost()) {
+        sendNet({
+          type: 'GAME_OVER',
+          allCleared,
+          p1Score: appState.p1Score,
+          p2Score: appState.p2Score,
+          cats: cats.map(c => ({
+            typeId: c.typeId,
+            name: c.name,
+            sleepBlocks: c.sleepBlocks,
+            swatCount: c.swatCount,
+            napCount: c.napCount
+          }))
+        });
+      }
+
+      const p2RoleText = appState.mode === 'CPU' ? '🤖 CPU' : '🎄 2P';
+      const winnerTitle = document.getElementById('winnerTitle');
+      if (appState.p1Score > appState.p2Score) {
+        winnerTitle.textContent = '🎅 1P の勝利！おめでとう！';
+        winnerTitle.className = 'text-2xl sm:text-3xl font-extrabold text-[#c93434] mb-3';
+      } else if (appState.p2Score > appState.p1Score) {
+        winnerTitle.textContent = `${p2RoleText} の勝利！おめでとう！`;
+        winnerTitle.className = 'text-2xl sm:text-3xl font-extrabold text-[#237a47] mb-3';
+      } else {
+        winnerTitle.textContent = '🎄 仲良し引き分け！ 🐾';
+        winnerTitle.className = 'text-2xl sm:text-3xl font-extrabold text-[#b8821d] mb-3';
+      }
+
+      document.getElementById('resP1CatName').textContent = CAT_TYPES[appState.p1Cat].name;
+      document.getElementById('resP2CatName').textContent = CAT_TYPES[appState.p2Cat].name;
+      document.getElementById('resP2Role').textContent = p2RoleText;
+      document.getElementById('resP1Score').textContent = appState.p1Score;
+      document.getElementById('resP2Score').textContent = appState.p2Score;
+
+      // Pick Whimsical MVP Cat (weighted by cat punches + sleep blocks + naps)
+      let mvp = cats[0];
+      let bestScore = -1;
+      for (const c of cats) {
+        const s = c.swatCount * 4 + c.sleepBlocks * 2 + c.napCount;
+        if (s > bestScore) {
+          bestScore = s;
+          mvp = c;
+        }
+      }
+      document.getElementById('mvpCatTitle').textContent =
+        `${mvp.name}（${CAT_TYPES[mvp.typeId].subtitle}）`;
+      document.getElementById('mvpCatStats').textContent =
+        `お昼寝ブロック ${mvp.sleepBlocks}回 ／ 猫パンチ ${mvp.swatCount}回 ／ お昼寝 ${mvp.napCount}回！` +
+        (allCleared ? ' ✨全ブロック制覇！' : '');
+
+      const mvpCanvas = document.getElementById('mvpCatCanvas');
+      const mctx = mvpCanvas.getContext('2d');
+      mctx.clearRect(0, 0, mvpCanvas.width, mvpCanvas.height);
+      drawCat(mctx, mvp.typeId, mvpCanvas.width / 2, mvpCanvas.height / 2 + 8, {
+        scale: 1.05,
+        state: 'IDLE',
+        portrait: true
+      });
+
+      document.getElementById('resultOverlay').classList.remove('hidden');
+    }
+
+    /*************************************************************************
+     * 11. CHARACTER SELECT UI BUILDER
+     *************************************************************************/
+    function buildCatSelectors() {
+      const p1Grid = document.getElementById('p1CatGrid');
+      const p2Grid = document.getElementById('p2CatGrid');
+      p1Grid.innerHTML = '';
+      p2Grid.innerHTML = '';
+
+      CAT_IDS.forEach((id) => {
+        p1Grid.appendChild(createCatCard(id, 1));
+        p2Grid.appendChild(createCatCard(id, 2));
+      });
+      refreshSelectorHighlights();
+    }
+
+    function createCatCard(typeId, player) {
+      const meta = CAT_TYPES[typeId];
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.dataset.catId = typeId;
+      card.dataset.player = player;
+      card.className = 'cat-card py-2 px-1.5 sm:py-2.5 sm:px-2 flex flex-col items-center justify-center text-center focus:outline-none';
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 96;
+      canvas.height = 96;
+      canvas.className = 'w-14 h-14 sm:w-16 sm:h-16';
+      const cctx = canvas.getContext('2d');
+      drawCat(cctx, typeId, 48, 56, { scale: 1.22, state: 'IDLE', portrait: true });
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'text-xs sm:text-[13px] font-extrabold text-[#3d2b24] mt-1 leading-tight';
+      nameEl.textContent = meta.name;
+
+      card.appendChild(canvas);
+      card.appendChild(nameEl);
+
+      card.addEventListener('click', () => {
+        sound.playPaddle(false);
+        if (appState.mode === 'ONLINE' && net.connected) {
+          // Online: Host selects 1P cat, Guest selects 2P cat
+          if (net.role === 'HOST' && player !== 1) return;
+          if (net.role === 'GUEST' && player !== 2) return;
+        }
+        if (player === 1) appState.p1Cat = typeId;
+        else appState.p2Cat = typeId;
+        refreshSelectorHighlights();
+        if (appState.mode === 'ONLINE' && net.connected) {
+          sendNet({ type: 'CAT_SELECT', player, catId: typeId });
+        }
+      });
+
+      return card;
+    }
+
+    function refreshSelectorHighlights() {
+      document.querySelectorAll('#p1CatGrid .cat-card').forEach((el) => {
+        el.classList.toggle('selected-p1', el.dataset.catId === appState.p1Cat);
+      });
+      document.querySelectorAll('#p2CatGrid .cat-card').forEach((el) => {
+        el.classList.toggle('selected-p2', el.dataset.catId === appState.p2Cat);
+      });
+    }
+
+    function drawHudCatIcons() {
+      const c1 = document.getElementById('hudP1Cat');
+      const ctx1 = c1.getContext('2d');
+      ctx1.clearRect(0, 0, c1.width, c1.height);
+      drawCat(ctx1, appState.p1Cat, 22, 26, { scale: 0.62, portrait: true });
+
+      const c2 = document.getElementById('hudP2Cat');
+      const ctx2 = c2.getContext('2d');
+      ctx2.clearRect(0, 0, c2.width, c2.height);
+      drawCat(ctx2, appState.p2Cat, 22, 26, { scale: 0.62, portrait: true });
+
+      document.getElementById('hudP1Name').textContent = CAT_TYPES[appState.p1Cat].name;
+      document.getElementById('hudP2Name').textContent = CAT_TYPES[appState.p2Cat].name;
+      document.getElementById('hudP2Label').textContent = appState.mode === 'CPU' ? 'CPU 🤖' : '2P 🎄';
+
+      const roleBanner = document.getElementById('onlineRoleBanner');
+      const roleText = document.getElementById('onlineRoleText');
+      const p1Hint = document.getElementById('bottomP1Hint');
+      const p2Hint = document.getElementById('bottomP2Hint');
+
+      if (appState.mode === 'ONLINE') {
+        roleBanner.classList.remove('hidden');
+        if (net.role === 'HOST') {
+          roleText.textContent = 'オンライン対戦中：あなたは 1P（左・赤）';
+          p1Hint.innerHTML = '🎅 あなた（1P）：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">W</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">S</kbd>・<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↑</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↓</kbd> or 画面ドラッグ';
+          p2Hint.innerHTML = '🌐 相手（2P）と通信中';
+        } else {
+          roleText.textContent = 'オンライン対戦中：あなたは 2P（右・緑）';
+          p1Hint.innerHTML = '🌐 相手（1P）と通信中';
+          p2Hint.innerHTML = '🎄 あなた（2P）：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">W</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">S</kbd>・<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↑</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↓</kbd> or 画面ドラッグ';
+        }
+      } else {
+        roleBanner.classList.add('hidden');
+        p1Hint.innerHTML = '🎅 1P：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">W</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">S</kbd> or 左画面ドラッグ';
+        p2Hint.innerHTML = appState.mode === 'CPU'
+          ? '🤖 2P：CPUが自動操作中'
+          : '🎄 2P：<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↑</kbd>/<kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white">↓</kbd> or 右画面ドラッグ';
+      }
+    }
+
+    function enterGameScreen() {
+      sound.init();
+      sound.playBell(true);
+      document.getElementById('titleScreen').classList.add('hidden');
+      document.getElementById('gameScreen').classList.remove('hidden');
+      resizeGameCanvas();
+      drawHudCatIcons();
+      resetGame();
+    }
+
+    /*************************************************************************
+     * 12. EVENT LISTENERS (Keyboard, Multi-Touch, UI Buttons)
+     *************************************************************************/
+    function bindEvents() {
+      // Mode Switcher
+      const mode2pBtn = document.getElementById('mode2pBtn');
+      const modeCpuBtn = document.getElementById('modeCpuBtn');
+      const modeOnlineBtn = document.getElementById('modeOnlineBtn');
+      const onlinePanel = document.getElementById('onlineLobbyPanel');
+      const p2Badge = document.getElementById('p2BadgeLabel');
+      const p2Hint = document.getElementById('p2ControlHint');
+
+      const setModeUI = (mode) => {
+        if (appState.mode === 'ONLINE' && mode !== 'ONLINE') {
+          cleanupPeer();
+        }
+        appState.mode = mode;
+        mode2pBtn.classList.toggle('active', mode === '2P');
+        modeCpuBtn.classList.toggle('active', mode === 'CPU');
+        modeOnlineBtn.classList.toggle('active', mode === 'ONLINE');
+        onlinePanel.classList.toggle('hidden', mode !== 'ONLINE');
+
+        if (mode === '2P') {
+          p2Badge.textContent = '🎄 2P（右・緑）';
+          p2Hint.textContent = '操作：↑ / ↓ または 右タッチ';
+        } else if (mode === 'CPU') {
+          p2Badge.textContent = '🤖 CPU（右・緑）';
+          p2Hint.textContent = 'CPUが自動で対戦します';
+        } else {
+          p2Badge.textContent = '🎄 2P（右・緑）';
+          p2Hint.textContent = 'オンラインで操作（W/S・↑/↓・タッチ）';
+          setOnlineStatus('未接続', '「部屋をつくる」または「部屋に入る」を選んで接続してね！', 'neutral');
+        }
+        updateStartButtonState();
+        sound.playPaddle(false);
+      };
+
+      mode2pBtn.addEventListener('click', () => setModeUI('2P'));
+      modeCpuBtn.addEventListener('click', () => setModeUI('CPU'));
+      modeOnlineBtn.addEventListener('click', () => setModeUI('ONLINE'));
+
+      // Online Lobby Buttons
+      document.getElementById('createRoomBtn').addEventListener('click', () => {
+        sound.init();
+        bgm.startIfEnabled();
+        sound.playPaddle(false);
+        createOnlineRoom();
+      });
+
+      document.getElementById('joinRoomBtn').addEventListener('click', () => {
+        sound.init();
+        bgm.startIfEnabled();
+        sound.playPaddle(false);
+        joinOnlineRoom();
+      });
+
+      document.getElementById('copyRoomCodeBtn').addEventListener('click', () => {
+        if (!net.roomCode) return;
+        const temp = document.createElement('textarea');
+        temp.value = net.roomCode;
+        document.body.appendChild(temp);
+        temp.select();
+        try {
+          document.execCommand('copy');
+          const btn = document.getElementById('copyRoomCodeBtn');
+          btn.textContent = '✅ コピー済';
+          setTimeout(() => { btn.textContent = '📋 コピー'; }, 1600);
+        } catch (_) {}
+        document.body.removeChild(temp);
+      });
+
+      // Start Game
+      document.getElementById('startGameBtn').addEventListener('click', () => {
+        bgm.startIfEnabled();
+        if (appState.mode === 'ONLINE') {
+          if (!isOnlineHost()) return;
+          sendNet({ type: 'START_GAME', p1Cat: appState.p1Cat, p2Cat: appState.p2Cat });
+        }
+        enterGameScreen();
+      });
+
+      // Global BGM Toggle & First-Interaction Autoplay Unlock
+      const bgmBtn = document.getElementById('bgmToggleBtn');
+      if (bgmBtn) {
+        bgmBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          bgm.toggle();
+        });
+      }
+
+      const unlockAudioOnFirstGesture = (e) => {
+        if (e.target && e.target.closest && e.target.closest('#bgmToggleBtn')) return;
+        bgm.startIfEnabled();
+      };
+      document.addEventListener('pointerdown', unlockAudioOnFirstGesture, { passive: true });
+      document.addEventListener('keydown', unlockAudioOnFirstGesture, { passive: true });
+
+      // Sound Toggle
+      const soundBtn = document.getElementById('soundToggleBtn');
+      soundBtn.addEventListener('click', () => {
+        const on = sound.toggle();
+        soundBtn.textContent = on ? '🔊 音ON' : '🔇 音OFF';
+      });
+
+      // Pause / Resume / Restart / Title
+      const togglePause = () => {
+        if (appState.gameOver) return;
+        if (isOnlineGuest()) return; // Host controls pause in online mode
+        appState.paused = !appState.paused;
+        document.getElementById('pauseOverlay').classList.toggle('hidden', !appState.paused);
+        if (isOnlineHost()) {
+          sendNet({ type: 'PAUSE_SYNC', paused: appState.paused });
+        }
+      };
+      document.getElementById('pauseBtn').addEventListener('click', togglePause);
+      document.getElementById('resumeBtn').addEventListener('click', togglePause);
+
+      const doRestart = () => {
+        sound.playBell(false);
+        if (isOnlineGuest()) {
+          sendNet({ type: 'REMATCH_REQ' });
+          return;
+        }
+        if (isOnlineHost()) {
+          sendNet({ type: 'START_GAME', p1Cat: appState.p1Cat, p2Cat: appState.p2Cat });
+        }
+        resetGame();
+      };
+      document.getElementById('restartBtn').addEventListener('click', doRestart);
+      document.getElementById('pauseRestartBtn').addEventListener('click', doRestart);
+      document.getElementById('playAgainBtn').addEventListener('click', doRestart);
+
+      const goTitle = () => {
+        if (appState.mode === 'ONLINE' && net.connected) {
+          sendNet({ type: 'GO_TITLE' });
+        }
+        appState.running = false;
+        appState.paused = false;
+        document.getElementById('disconnectOverlay').classList.add('hidden');
+        document.getElementById('gameScreen').classList.add('hidden');
+        document.getElementById('titleScreen').classList.remove('hidden');
+        updateStartButtonState();
+      };
+      document.getElementById('pauseTitleBtn').addEventListener('click', goTitle);
+      document.getElementById('backToTitleBtn').addEventListener('click', goTitle);
+      document.getElementById('disconnectBackBtn').addEventListener('click', () => {
+        cleanupPeer();
+        setOnlineStatus('未接続', '「部屋をつくる」または「部屋に入る」を選んで接続してね！', 'neutral');
+        goTitle();
+      });
+
+      // Keyboard Controls
+      window.addEventListener('keydown', (e) => {
+        if (['ArrowUp', 'ArrowDown', 'Space'].includes(e.code) && appState.running) {
+          e.preventDefault();
+        }
+        keys[e.code] = true;
+        if (e.code === 'Escape' && appState.running && !appState.gameOver) {
+          togglePause();
+        }
+      });
+      window.addEventListener('keyup', (e) => {
+        keys[e.code] = false;
+      });
+
+      // Multi-touch Controls on Canvas (Supports 2 players simultaneously on tablets!)
+      const getCanvasPos = (clientX, clientY) => {
+        const rect = gameCanvas.getBoundingClientRect();
+        return {
+          x: ((clientX - rect.left) / rect.width) * W,
+          y: ((clientY - rect.top) / rect.height) * H
+        };
+      };
+
+      gameCanvas.addEventListener('touchstart', (e) => {
+        if (!appState.running || appState.paused) return;
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          const pos = getCanvasPos(t.clientX, t.clientY);
+          const side = pos.x < W / 2 ? 'p1' : 'p2';
+          activeTouches.set(t.identifier, side);
+          touchTargets[side] = pos.y;
+        }
+      }, { passive: false });
+
+      gameCanvas.addEventListener('touchmove', (e) => {
+        if (!appState.running || appState.paused) return;
+        e.preventDefault();
+        for (const t of e.changedTouches) {
+          const side = activeTouches.get(t.identifier);
+          if (side) {
+            const pos = getCanvasPos(t.clientX, t.clientY);
+            touchTargets[side] = pos.y;
+          }
+        }
+      }, { passive: false });
+
+      const clearTouch = (e) => {
+        for (const t of e.changedTouches) {
+          const side = activeTouches.get(t.identifier);
+          if (side) {
+            activeTouches.delete(t.identifier);
+            touchTargets[side] = null;
+          }
+        }
+      };
+      gameCanvas.addEventListener('touchend', clearTouch);
+      gameCanvas.addEventListener('touchcancel', clearTouch);
+
+      // Mouse drag fallback for single-user testing on desktop
+      let mouseSide = null;
+      gameCanvas.addEventListener('mousedown', (e) => {
+        if (!appState.running || appState.paused) return;
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        mouseSide = pos.x < W / 2 ? 'p1' : 'p2';
+        touchTargets[mouseSide] = pos.y;
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (!mouseSide) return;
+        const pos = getCanvasPos(e.clientX, e.clientY);
+        touchTargets[mouseSide] = pos.y;
+      });
+      window.addEventListener('mouseup', () => {
+        if (mouseSide) {
+          touchTargets[mouseSide] = null;
+          mouseSide = null;
+        }
+      });
+
+      // Responsive Resize
+      window.addEventListener('resize', () => {
+        resizeBgSnow();
+        if (!document.getElementById('gameScreen').classList.contains('hidden')) {
+          resizeGameCanvas();
+        }
+      });
+    }
+
+    /*************************************************************************
+     * 13. MAIN ANIMATION LOOP
+     *************************************************************************/
+    let lastTime = 0;
+
+    function mainLoop(timestamp) {
+      if (!lastTime) lastTime = timestamp;
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+      lastTime = timestamp;
+
+      updateBgSnow(dt);
+
+      if (!document.getElementById('gameScreen').classList.contains('hidden')) {
+        updateGame(dt);
+        renderGame();
+      }
+
+      requestAnimationFrame(mainLoop);
+    }
+
+    window.onload = function () {
+      resizeBgSnow();
+      bgm.init();
+      buildCatSelectors();
+      bindEvents();
+      requestAnimationFrame(mainLoop);
+    };
+  </script>
+</body>
+</html>
